@@ -33,7 +33,3 @@ Upon task execution completion, TCS client sends TaskComplete notification to TC
 
 When all the tasks are complete, TCS marks the JobInstance as complete, and notifies all the TaskExecutionTarget endpoints.
 
-
-[TCS Client API] (http://gitlab.cisco.com/tejdas/apic-tcs/wikis/tcs-client-api)
-===============================================================================
-
