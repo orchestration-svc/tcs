@@ -1,0 +1,4 @@
+# ZooKeeper IP address. To remove dependency on ZooKeeper, set it to blank; ZK_IP=
+ZK_IP=172.17.0.3
+# MySQL IP address
+MYSQL_IP=172.17.0.4

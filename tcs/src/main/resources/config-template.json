@@ -1,0 +1,17 @@
+{
+  "tcsDeploymentMode" : "MULTI_INSTANCE",
+  "zookeeperConnectString" : "ZK_IP:2181",
+  "clusterConfig" : {
+    "clusterName" : "APIC-TCS",
+    "shardGroupName" : "tcs-shard",
+    "numPartitions" : NUM_SHARDS
+  },
+  "dbConfig" : {
+    "dbConnectString" : "jdbc:mysql://MYSQL_IP:3306/tcsdb?autoReconnect=true",
+    "userName" : "root",
+    "password" : "root"
+  },
+  "rabbitConfig" : {
+    "brokerAddress" : "RMQ_IP"
+  }
+}
