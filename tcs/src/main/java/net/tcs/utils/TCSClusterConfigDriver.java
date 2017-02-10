@@ -9,7 +9,7 @@ import org.apache.helix.model.StateModelDefinition;
 import org.apache.helix.tools.StateModelConfigGenerator;
 
 /**
- * Performs Helix cluster configuration in ZooKeeper
+ * Performs TCS cluster configuration in ZooKeeper
  */
 public class TCSClusterConfigDriver {
     public static final String SHARD_TYPE = "OnlineOffline";

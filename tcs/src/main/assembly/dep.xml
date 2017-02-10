@@ -16,6 +16,7 @@
                 <include>runtcs.sh</include>
                 <include>runbarriercontroller.sh</include>
                 <include>configure_shard.sh</include>
+                <include>grow_shard.sh</include>
                 <include>configure_rmq.sh</include>
                 <include>configure_tcs.sh</include>
             </includes>
