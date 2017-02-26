@@ -124,6 +124,28 @@ public class JobInstanceDBAdapter {
         return taskDAO;
     }
 
+    public JobInstanceDAO saveInProgressJob(final String jobId) {
+
+        return new RetryOnStaleDecorator<JobInstanceDAO>() {
+
+            @Override
+            public JobInstanceDAO executeDB() {
+                final JobInstanceDAO jobDAO = JobInstanceDAO.findById(jobId);
+                if (jobDAO == null) {
+                    throw new JobInstanceNotFoundException(jobId);
+                }
+
+                if (JobState.INIT != JobState.get(jobDAO.getState())) {
+                    throw new JobStateException(JobState.INIT, JobState.get(jobDAO.getState()));
+                }
+
+                jobDAO.setState(JobState.INPROGRESS.value());
+                jobDAO.saveIt();
+                return jobDAO;
+            }
+        }.executeNoTransaction("saving completed job");
+    }
+
     public void saveCompletedJob(final String jobId) {
 
         new RetryOnStaleDecorator<JobInstanceDAO>() {

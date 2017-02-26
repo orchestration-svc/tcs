@@ -9,7 +9,7 @@ import com.task.coordinator.base.message.TcsAsyncCtrlMessage;
 import net.tcs.task.ParentTaskOutput;
 import net.tcs.task.PredecessorTaskOutputImpl;
 
-public class BeginTaskMessage extends TcsAsyncCtrlMessage{
+public class BeginTaskMessage extends TcsAsyncCtrlMessage {
 
     public BeginTaskMessage(String taskName, int taskParallelIndex, String taskId, String jobName, String jobId,
             String shardId,

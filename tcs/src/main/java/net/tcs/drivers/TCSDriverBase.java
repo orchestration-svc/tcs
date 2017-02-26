@@ -1,15 +1,22 @@
 package net.tcs.drivers;
 
 import net.tcs.db.ActiveJDBCAdapter;
+import net.tcs.messagehandlers.TcsJobExecSubmitListener;
 import net.tcs.messagehandlers.TcsJobRegisterListener;
 import net.tcs.shard.TCSShardLock;
 
 public abstract class TCSDriverBase {
     private TcsJobRegisterListener listener = null;
 
+    private TcsJobExecSubmitListener submitJobListener = null;
+
     public abstract void initialize(String instanceName) throws Exception;
 
     public void cleanup() {
+        if (submitJobListener != null) {
+            submitJobListener.cleanup();
+        }
+
         if (listener != null) {
             listener.cleanup();
         }
@@ -22,6 +29,9 @@ public abstract class TCSDriverBase {
     protected void initializeRMQ() {
         listener = TcsJobRegisterListener.createTCSListenerForRegisterJob();
         listener.initialize();
+
+        submitJobListener = TcsJobExecSubmitListener.createTCSListenerForSubmitJob();
+        submitJobListener.initialize();
 
         System.out
         .println("Connected to RabbitMQ Broker: " + TCSDriver.getConfig().getRabbitConfig().getBrokerAddress());

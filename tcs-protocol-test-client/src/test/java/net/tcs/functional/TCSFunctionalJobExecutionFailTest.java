@@ -28,12 +28,12 @@ public class TCSFunctionalJobExecutionFailTest extends TCSTestBase {
 
     @Override
     @BeforeClass
-    @Parameters({ "rmqIP", "partitionCount" })
-    public void setup(@Optional("") String rmqIP, @Optional("4") int partitionCount) throws IOException {
+    @Parameters({ "rmqIP" })
+    public void setup(@Optional("") String rmqIP) throws IOException {
         if (StringUtils.isEmpty(rmqIP)) {
             throw new SkipException("Skipping TCSFunctionalJobExecutionFailTest");
         }
-        super.setup(rmqIP, partitionCount);
+        super.setup(rmqIP);
         fw = new PrintWriter(new FileWriter("failjobs.txt", false));
         fwTask = new PrintWriter(new FileWriter("failtasks.txt", false));
     }

@@ -3,6 +3,7 @@ package net.tcs.messagehandlers;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,23 +19,24 @@ import com.task.coordinator.base.message.ErrorResultMessage;
 import com.task.coordinator.base.message.TcsCtrlMessageResult;
 import com.task.coordinator.base.message.listener.TcsMessageListener;
 import com.task.coordinator.base.message.listener.TcsMessageListenerContainer;
+import com.task.coordinator.endpoint.TcsTaskExecutionEndpoint;
+import com.task.coordinator.message.utils.TCSConstants;
 import com.task.coordinator.message.utils.TCSMessageUtils;
 import com.task.coordinator.producer.TcsProducer;
+import com.task.coordinator.request.message.BeginJobMessage;
 import com.task.coordinator.request.message.JobRollbackRequestMessage;
 import com.task.coordinator.request.message.JobSubmitRequestMessage;
+import com.task.coordinator.request.message.RollbackJobMessage;
 import com.task.coordinator.response.message.JobRollbackMessageResponse;
 import com.task.coordinator.response.message.JobSubmitMessageResponse;
 
-import net.tcs.core.TCSCommandType;
-import net.tcs.core.TCSDispatcher;
-import net.tcs.core.TCSRollbackDispatcher;
-import net.tcs.core.TaskBoard;
 import net.tcs.db.JobDefinitionDAO;
 import net.tcs.db.JobInstanceDAO;
 import net.tcs.db.TaskInstanceDAO;
 import net.tcs.db.adapter.JobDefintionDBAdapter;
 import net.tcs.db.adapter.JobInstanceDBAdapter;
 import net.tcs.db.adapter.TaskInstanceDBAdapter;
+import net.tcs.drivers.TCSDriver;
 import net.tcs.exceptions.JobInstanceNotFoundException;
 import net.tcs.exceptions.JobRollbackIllegalStateException;
 import net.tcs.exceptions.JobStateException;
@@ -49,26 +51,32 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TcsJobExecSubmitListener.class);
 
-    private final String shardId;
     private final JobDefintionDBAdapter jobDBAdapter = new JobDefintionDBAdapter();
     private final JobInstanceDBAdapter jobInstanceDBAdapter = new JobInstanceDBAdapter();
     protected final TaskInstanceDBAdapter taskDBAdapter = new TaskInstanceDBAdapter();
-    private final TaskBoard taskBoard;
     private final ObjectMapper mapper = new ObjectMapper().enableDefaultTyping();
     private TcsMessageListenerContainer listenerContainer;
-    private final TCSRollbackDispatcher rollbackDispatcher;
+    private final TcsProducer producer;
+    private final Random r = new Random();
 
-    public TcsJobExecSubmitListener(String shardId, MessageConverter messageConverter, TcsProducer producer,
-            TaskBoard taskBoard, TCSRollbackDispatcher rollbackDispatcher) {
-        super(messageConverter, producer);
-        this.shardId = shardId;
-        this.taskBoard = taskBoard;
-        this.rollbackDispatcher = rollbackDispatcher;
+    public static TcsJobExecSubmitListener createTCSListenerForSubmitJob() {
+
+        final MessageConverter messageConverter = (MessageConverter) TCSDriver.getContext()
+                .getBean("defaultMessageConverter");
+        final TcsProducer producer = TCSDriver.getContext().getBean(TcsProducer.class);
+        return new TcsJobExecSubmitListener(messageConverter, producer);
     }
 
-    public void initialize(TcsListenerContainerFactory factory) {
-        final String jobSubmitQueueName = TCSMessageUtils.getQueueNameForProcessingJobsOnShard(shardId);
-        listenerContainer = factory.createListenerContainer(this, Arrays.asList(jobSubmitQueueName));
+    public TcsJobExecSubmitListener(MessageConverter messageConverter, TcsProducer producer) {
+        super(messageConverter, producer);
+        this.producer = producer;
+    }
+
+    public void initialize() {
+        final TcsListenerContainerFactory factory = TCSDriver.getContext().getBean(TcsListenerContainerFactory.class);
+
+        listenerContainer = factory.createListenerContainer(this,
+                Arrays.asList(TCSConstants.TCS_SUBMIT_JOB_QUEUE));
         listenerContainer.start(1);
     }
 
@@ -108,13 +116,18 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
         }
     }
 
-    private JobInstanceDAO createJobDAO(JobSubmitRequest request) {
+    String chooseARandomShard() {
+        int numPartitions = TCSDriver.getConfig().getClusterConfig().getNumPartitions();
+        return String.format("%s_%d", TCSConstants.TCS_SHARD_GROUP_NAME, r.nextInt(numPartitions));
+    }
+
+    private JobInstanceDAO createJobDAO(JobSubmitRequest request, String shardId) {
         final JobInstanceDAO jobDAO = new JobInstanceDAO();
         jobDAO.setInstanceId(request.getJobId());
         jobDAO.setName(request.getJobName());
         jobDAO.setShardId(shardId);
         jobDAO.setJobNotificationUri(request.getJobNotificationUri());
-        jobDAO.setState(JobState.INPROGRESS.name());
+        jobDAO.setState(JobState.INIT.name());
         jobDAO.setStartTime(new Date());
 
         try {
@@ -127,9 +140,9 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
     }
 
     /**
-     * On receipt of a SubmitJob event, (1) save the Job in DB, (2) ack the
-     * message and (3) submit the Job to TaskBoard for routing to a TCSDisptcher
-     * for execution.
+     * On receipt of a SubmitJob event, (1) choose a shard for the Job, (2) save
+     * the Job in DB, (3) ack the message and (4) route the message to the
+     * shard-specific handler for execution.
      *
      * @param channel
      * @param objectMapper
@@ -152,20 +165,34 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
             errorMessage.setRequestType(jobSubmitRequestMessage.getRequestType());
             return errorMessage;
         }
+
+        String shardId = chooseARandomShard();
         /*
          * Create JobInstance and save in DB
          */
-        final JobInstanceDAO jobDAO = createJobDAO(jobRequest);
+        final JobInstanceDAO jobDAO = createJobDAO(jobRequest, shardId);
         final JobDefinition jobDef = jobDBAdapter.getJobDefinition(jobRequest.getJobName());
         jobInstanceDBAdapter.saveSubmittedJob(jobDAO, jobDef, jobRequest.getInput());
+        BeginJobMessage beginJobMessage = new BeginJobMessage(jobDAO.getInstanceId());
+
+        routeBeginJobMessage(beginJobMessage, shardId);
+
         /*
          * Send JobSubmitResponse
          */
-        final JobSubmitResponse jobResponse = new JobSubmitResponse(jobDAO.getName(), jobDAO.getInstanceId(), shardId);
+        final JobSubmitResponse jobResponse = new JobSubmitResponse(jobDAO.getName(), jobDAO.getInstanceId(),
+                jobDAO.getShardId());
         final JobSubmitMessageResponse resultMessage = new JobSubmitMessageResponse(jobResponse);
-        final TCSDispatcher taskDispatcher = taskBoard.registerJobForExecution(jobDAO.getInstanceId());
-        taskDispatcher.enqueueCommand(TCSCommandType.COMMAND_BEGIN_JOB, jobDAO);
         return resultMessage;
+    }
+
+    void routeBeginJobMessage(BeginJobMessage beginJobMessage, String shardId) {
+        /*
+         * Route to the shard
+         */
+        final TcsTaskExecutionEndpoint address = TCSMessageUtils
+                .getEndpointAddressForPublishingJobNotificationsOnShard(shardId);
+        producer.sendMessage(address.getExchangeName(), address.getRoutingKey(), beginJobMessage);
     }
 
     private TcsCtrlMessageResult<?> handleRollbackJob(JobRollbackRequestMessage jobSubmitRequestMessage) {
@@ -207,11 +234,19 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
         }
 
         /*
+         * Route to the shard
+         */
+
+        final TcsTaskExecutionEndpoint address = TCSMessageUtils
+                .getEndpointAddressForPublishingJobNotificationsOnShard(jobDAO.getShardId());
+        RollbackJobMessage rollbackJobMessage = new RollbackJobMessage(jobDAO.getInstanceId());
+        producer.sendMessage(address.getExchangeName(), address.getRoutingKey(), rollbackJobMessage);
+
+        /*
          * Send JobRollbackResponse
          */
         final JobRollbackResponse jobResponse = new JobRollbackResponse(jobDAO.getName(), jobDAO.getInstanceId());
         final JobRollbackMessageResponse resultMessage = new JobRollbackMessageResponse(jobResponse);
-        rollbackDispatcher.enqueueCommand(TCSCommandType.COMMAND_ROLLBACK_JOB, jobDAO);
         return resultMessage;
     }
 

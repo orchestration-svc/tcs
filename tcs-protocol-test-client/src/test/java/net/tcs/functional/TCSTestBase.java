@@ -20,8 +20,8 @@ public class TCSTestBase {
 
     protected final Map<String, JobSpec> jobspecMap = new HashMap<>();
 
-    public void setup(String rmqIP, int partitionCount) throws IOException {
-        tcsClientRuntime = TCSClientFactory.createTCSClient(partitionCount, rmqIP);
+    public void setup(String rmqIP) throws IOException {
+        tcsClientRuntime = TCSClientFactory.createTCSClient(rmqIP);
         tcsClientRuntime.initialize();
 
         testRuntime = new TCSTestRuntime();

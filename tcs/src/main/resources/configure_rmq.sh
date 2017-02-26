@@ -33,6 +33,12 @@ echo "Declare bindings: tcs.queryjob.route"
 rabbitmqadmin -H ${RMQHOST} declare binding source=$TCS_JOB_REGISTER_QUERY_EXCHANGE destination_type="queue" destination="tcs.queryjob" routing_key="tcs.queryjob.route"
 
 
+echo "Declare queue: tcs.submitjob"
+rabbitmqadmin -H ${RMQHOST} declare queue name=tcs.submitjob durable=true auto_delete=false
+echo "Declare bindings: tcs.submitjob.route"
+rabbitmqadmin -H ${RMQHOST} declare binding source=$TCS_JOB_EXE_TASK_NOTIFY_EXCHANGE destination_type="queue" destination="tcs.submitjob" routing_key="tcs.submitjob.route"
+
+
 parition_count="$2"
 parition_count=$((parition_count-1))
 

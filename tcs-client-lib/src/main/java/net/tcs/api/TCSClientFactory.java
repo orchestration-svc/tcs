@@ -20,7 +20,7 @@ public class TCSClientFactory {
      *
      * @return
      */
-    public static TCSClient createTCSClient(int numPartitions, String rmqBroker) {
-        return new TCSClientRuntime(numPartitions, rmqBroker);
+    public static TCSClient createTCSClient(String rmqBroker) {
+        return new TCSClientRuntime(rmqBroker);
     }
 }

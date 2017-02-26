@@ -24,7 +24,7 @@ import net.tcs.core.TCSRollbackDispatcher;
 import net.tcs.core.TaskBoard;
 import net.tcs.core.TaskRetryDriver;
 import net.tcs.drivers.TCSDriver;
-import net.tcs.messagehandlers.TcsJobExecSubmitListener;
+import net.tcs.messagehandlers.TcsJobExecBeginListener;
 import net.tcs.messagehandlers.TcsTaskExecEventListener;
 
 /**
@@ -74,7 +74,7 @@ public class TCSShardRunner {
 
     private TCSRollbackDispatcher rollbackDispatcher;
 
-    private TcsJobExecSubmitListener tcsJobExecSubmitListener;
+    private TcsJobExecBeginListener tcsJobExecSubmitListener;
 
     private TcsTaskExecEventListener tcsTaskExecEventListener;
 
@@ -154,7 +154,7 @@ public class TCSShardRunner {
         final MessageConverter messageConverter = (MessageConverter) context.getBean("defaultMessageConverter");
         final TcsListenerContainerFactory factory = context.getBean(TcsListenerContainerFactory.class);
 
-        tcsJobExecSubmitListener = new TcsJobExecSubmitListener(shardId, messageConverter, producer, taskBoard,
+        tcsJobExecSubmitListener = new TcsJobExecBeginListener(shardId, messageConverter, producer, taskBoard,
                 rollbackDispatcher);
         tcsJobExecSubmitListener.initialize(factory);
 

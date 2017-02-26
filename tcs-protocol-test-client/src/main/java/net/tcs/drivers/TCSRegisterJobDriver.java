@@ -17,7 +17,7 @@ public class TCSRegisterJobDriver {
 
     public static void main(String[] args) throws IOException {
         final String brokerAddress = args[0];
-        tcsClientRuntime = TCSClientFactory.createTCSClient(1, brokerAddress);
+        tcsClientRuntime = TCSClientFactory.createTCSClient(brokerAddress);
         tcsClientRuntime.initialize();
 
         registerJobTestJob1(brokerAddress);

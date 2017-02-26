@@ -3,13 +3,11 @@ package net.tcs.core;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpTemplate;
@@ -28,8 +26,6 @@ import com.task.coordinator.producer.TcsProducer;
 import com.task.coordinator.request.message.JobRollbackRequestMessage;
 import com.task.coordinator.request.message.JobSpecRegistrationMessage;
 import com.task.coordinator.request.message.JobSubmitRequestMessage;
-import com.task.coordinator.request.message.QueryJobInstanceRequest;
-import com.task.coordinator.request.message.QueryJobInstanceResponse;
 import com.task.coordinator.request.message.QueryJobSpecMessage;
 import com.task.coordinator.request.message.TaskCompleteMessage;
 import com.task.coordinator.request.message.TaskFailedMessage;
@@ -56,21 +52,18 @@ public class TCSClientRuntime implements TCSClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TCSClientRuntime.class);
 
-    private final int numPartitions;
     private final String rmqBrokerAddress;
 
     private SpringRmqConnectionFactory rmqFactory;
     private AmqpTemplate template;
     private volatile boolean initialized = false;
     private final ObjectMapper mapper = new ObjectMapper();
-    private final Random r = new Random();
     private final ConcurrentMap<String, JobDefinition> jobSpecs = new ConcurrentHashMap<>();
     private final TcsListenerContainerFactory factory = new TcsListenerContainerFactory();
     private TcsProducer producer;
     private final TCSRMQCommandExecutor rmqCommandExecutor = new TCSRMQCommandExecutor();
 
-    public TCSClientRuntime(int numPartitions, String rmqBrokerAddress) {
-        this.numPartitions = numPartitions;
+    public TCSClientRuntime(String rmqBrokerAddress) {
         this.rmqBrokerAddress = rmqBrokerAddress;
     }
 
@@ -182,10 +175,6 @@ public class TCSClientRuntime implements TCSClient {
         }
     }
 
-    private String chooseARandomShard() {
-        return String.format("%s_%d", TCSConstants.TCS_SHARD_GROUP_NAME, r.nextInt(numPartitions));
-    }
-
     @Override
     public String startJob(String jobName, Map<String, byte[]> input) {
 
@@ -245,8 +234,7 @@ public class TCSClientRuntime implements TCSClient {
 
         final String jobId = UUID.randomUUID().toString();
 
-        final String shardId = chooseARandomShard();
-        System.out.println("startJob: " + jobId + "   chose shard: " + shardId);
+        System.out.println("startJob: " + jobId);
 
         final JobSubmitRequest req = new JobSubmitRequest(jobName, jobId, jobListener.getEndpoint().toEndpointURI(),
                 taskInputMap);
@@ -256,7 +244,7 @@ public class TCSClientRuntime implements TCSClient {
         jobSubmitMessage.setRequest(req);
 
         final TcsTaskExecutionEndpoint address = TCSMessageUtils
-                .getEndpointAddressForPublishingJobNotificationsOnShard(shardId);
+                .getEndpointAddressForSubmitJob();
 
         final Object result = template
                 .convertSendAndReceive(address.getExchangeName(), address.getRoutingKey(), jobSubmitMessage);
@@ -438,34 +426,6 @@ public class TCSClientRuntime implements TCSClient {
     @Override
     public void rollbackJob(String jobName, String jobInstanceId) {
 
-        final QueryJobInstanceRequest requestQuery = new QueryJobInstanceRequest();
-        requestQuery.setJobInstanceId(jobInstanceId);
-
-        final Object resultQuery = template.convertSendAndReceive(TCSConstants.TCS_EXCHANGE,
-                TCSConstants.TCS_QUERY_TASK_RKEY, requestQuery);
-
-        if (resultQuery == null) {
-            LOGGER.warn("Job InstanceId: {} not found with TCS", jobInstanceId);
-            return;
-        }
-
-        final QueryJobInstanceResponse responseQuery;
-        try {
-            responseQuery = mapper.readValue((byte[]) resultQuery, QueryJobInstanceResponse.class);
-        } catch (final Exception e) {
-            LOGGER.error(e.getMessage());
-            return;
-        }
-
-        if (!StringUtils.equalsIgnoreCase("FAILED", responseQuery.getStatus())) {
-            final String errMessage = String.format(
-                    "Job: %s, instanceId: %s is not FAILED; therefore cannot rollback. Current state: %s",
-                    jobName, jobInstanceId, responseQuery.getStatus());
-            LOGGER.error(errMessage);
-            System.out.println(errMessage);
-            return;
-        }
-
         final TCSClientJobCallbackListener jobListener = jobListeners.get(jobName);
         final JobRollbackRequest req = new JobRollbackRequest(jobName, jobInstanceId,
                 jobListener.getEndpoint().toEndpointURI());
@@ -474,7 +434,7 @@ public class TCSClientRuntime implements TCSClient {
         jobRollbackMessage.setRequest(req);
 
         final TcsTaskExecutionEndpoint address = TCSMessageUtils
-                .getEndpointAddressForPublishingJobNotificationsOnShard(responseQuery.getShardId());
+                .getEndpointAddressForSubmitJob();
 
         final Object result = template.convertSendAndReceive(address.getExchangeName(), address.getRoutingKey(),
                 jobRollbackMessage);

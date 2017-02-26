@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 
 import com.task.coordinator.base.message.TcsCtrlMessage;
 import com.task.coordinator.base.message.TcsCtrlMessageResult;
+import com.task.coordinator.request.message.BeginJobMessage;
 import com.task.coordinator.request.message.BeginTaskMessage;
 import com.task.coordinator.request.message.JobCompleteMessage;
 import com.task.coordinator.request.message.JobFailedMessage;
@@ -51,6 +52,8 @@ import net.tcs.task.JobDefinition;
 
 public class TCSDispatcherTest extends DBAdapterTestBase {
     private TcsJobExecSubmitListener jobHandler;
+
+    private TcsJobExecBeginListener beginJobHandler;
 
     private TcsTaskExecEventListener taskHandler;
 
@@ -477,7 +480,22 @@ public class TCSDispatcherTest extends DBAdapterTestBase {
         dispatcher = new TCSDispatcher(taskBoard, producer);
         executor.submit(dispatcher);
 
-        jobHandler = new TcsJobExecSubmitListener(shardId, messageConverter, producer, taskBoard, rollbackDispatcher);
+        beginJobHandler = new TcsJobExecBeginListener(shardId, messageConverter, producer, taskBoard,
+                rollbackDispatcher);
+
+        final TcsJobExecBeginListener handler = beginJobHandler;
+        jobHandler = new TcsJobExecSubmitListener(messageConverter, producer) {
+
+            @Override
+            String chooseARandomShard() {
+                return shardId;
+            }
+
+            @Override
+            void routeBeginJobMessage(BeginJobMessage beginJobMessage, String shardId) {
+                handler.handleBeginJob(beginJobMessage);
+            }
+        };
 
         taskHandler = new TcsTaskExecEventListener(shardId, messageConverter, producer, taskBoard, rollbackDispatcher);
     }

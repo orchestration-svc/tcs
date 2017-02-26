@@ -86,7 +86,6 @@
 				<configuration>
 					<systemPropertyVariables>
 						<environment>${rmqIP}</environment>
-						<environment>${partitionCount}</environment>
 					</systemPropertyVariables>
 				</configuration>
 			</plugin>

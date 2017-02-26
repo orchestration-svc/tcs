@@ -36,7 +36,7 @@ public class TCSFunctionalRegisterJobTest {
         if (StringUtils.isEmpty(rmqIP)) {
             throw new SkipException("Skipping TCSFunctionalRegisterJobTest");
         }
-        tcsClientRuntime = TCSClientFactory.createTCSClient(partitionCount, rmqIP);
+        tcsClientRuntime = TCSClientFactory.createTCSClient(rmqIP);
         tcsClientRuntime.initialize();
 
         testRuntime = new TCSTestRuntime();

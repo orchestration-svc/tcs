@@ -33,6 +33,10 @@ public class TCSConstants {
 
     public static final String TCS_JOB_EXEC_RKEY = "tcs.job.exec.route";
 
+    public static final String TCS_SUBMIT_JOB_QUEUE = "tcs.submitjob";
+
+    public static final String TCS_SUBMIT_JOB_ROUTE = "tcs.submitjob.route";
+
     /*
      * RMQ constants for Task completion
      */

@@ -26,12 +26,12 @@ public class TCSFunctionalJobExecutionRollbackTest extends TCSTestBase {
 
     @Override
     @BeforeClass
-    @Parameters({ "rmqIP", "partitionCount" })
-    public void setup(@Optional("") String rmqIP, @Optional("4") int partitionCount) throws IOException {
+    @Parameters({ "rmqIP" })
+    public void setup(@Optional("") String rmqIP) throws IOException {
         if (StringUtils.isEmpty(rmqIP)) {
             throw new SkipException("Skipping TCSFunctionalJobExecutionRollbackTest");
         }
-        super.setup(rmqIP, partitionCount);
+        super.setup(rmqIP);
     }
 
     @Override

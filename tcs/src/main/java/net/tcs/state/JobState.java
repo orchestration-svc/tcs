@@ -1,7 +1,7 @@
 package net.tcs.state;
 
 public enum JobState {
-    READY("READY"),
+    INIT("INIT"),
     INPROGRESS("INPROGRESS"),
     COMPLETE("COMPLETE"),
     FAILED("FAILED"),
@@ -21,8 +21,8 @@ public enum JobState {
 
     public static JobState get(String state) {
         switch (state) {
-        case "READY":
-            return JobState.READY;
+        case "INIT":
+            return JobState.INIT;
         case "INPROGRESS":
             return JobState.INPROGRESS;
         case "COMPLETE":

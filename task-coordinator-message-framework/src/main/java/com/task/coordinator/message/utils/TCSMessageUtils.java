@@ -10,6 +10,12 @@ public class TCSMessageUtils {
         return new TcsTaskExecutionEndpoint(brokerAddress, TCSConstants.TCS_JOB_EXEC_EXCHANGE, jobRoutingKey);
     }
 
+    public static TcsTaskExecutionEndpoint getEndpointAddressForSubmitJob() {
+
+        final String jobRoutingKey = TCSConstants.TCS_SUBMIT_JOB_ROUTE;
+        return new TcsTaskExecutionEndpoint(null, TCSConstants.TCS_JOB_EXEC_EXCHANGE, jobRoutingKey);
+    }
+
     public static TcsTaskExecutionEndpoint getEndpointAddressForPublishingJobNotificationsOnShard(String shardId) {
 
         final String jobRoutingKey = String.format("%s.%s", TCSConstants.TCS_JOB_EXEC_RKEY, shardId);

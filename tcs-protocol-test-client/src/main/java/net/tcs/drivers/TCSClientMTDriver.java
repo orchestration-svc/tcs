@@ -135,16 +135,15 @@ public class TCSClientMTDriver {
 
     public static void main(String[] args) throws IOException {
 
-        if (args == null || args.length < 2) {
+        if (args == null || args.length < 1) {
             System.err.println(
-                    "Must specify [numParitions] [RMQ-Broker] [numWorkers (optional)] [workerIndex (optional]");
+                    "Must specify [RMQ-Broker] [numWorkers (optional)] [workerIndex (optional]");
             return;
         }
 
-        final int numPartitions = Integer.parseInt(args[0]);
-        final String rmqBroker = args[1];
+        final String rmqBroker = args[0];
 
-        tcsClientRuntime = TCSClientFactory.createTCSClient(numPartitions, rmqBroker);
+        tcsClientRuntime = TCSClientFactory.createTCSClient(rmqBroker);
         tcsClientRuntime.initialize();
 
         executor = Executors.newCachedThreadPool(new ThreadFactory() {
@@ -161,9 +160,9 @@ public class TCSClientMTDriver {
             executor.submit(dispatcher);
         }
 
-        if (args.length > 2) {
-            final int numWorkers = Integer.parseInt(args[2]);
-            final int workerIndex = Integer.parseInt(args[3]);
+        if (args.length > 1) {
+            final int numWorkers = Integer.parseInt(args[1]);
+            final int workerIndex = Integer.parseInt(args[2]);
             prepareForTaskExecution(numWorkers, workerIndex);
         } else {
             prepareForTaskExecution();
