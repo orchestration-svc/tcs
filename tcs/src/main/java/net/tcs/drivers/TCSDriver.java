@@ -1,6 +1,7 @@
 package net.tcs.drivers;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -40,6 +41,16 @@ public class TCSDriver {
 
     private static TCSDriverBase tcsDriver;
 
+    private static final AtomicInteger numPartitions = new AtomicInteger(1);
+
+    public static void setNumPartitions(int partitions) {
+        numPartitions.set(partitions);
+    }
+
+    public static int getNumPartitions() {
+        return numPartitions.get();
+    }
+
     public static void main(String[] args) {
 
         if (args.length < 1) {
@@ -57,6 +68,7 @@ public class TCSDriver {
             return;
         }
 
+        numPartitions.set(config.getClusterConfig().getNumPartitions());
         final String instanceName = String.format("TCS_%s", args[0]);
         System.out.println("TCS Service instance name: " + instanceName);
         System.out.println("TCS Deployment mode: " + config.getTcsDeploymentMode());

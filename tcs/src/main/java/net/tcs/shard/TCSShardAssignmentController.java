@@ -1,31 +1,28 @@
 package net.tcs.shard;
 
-import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.helix.HelixManager;
 import org.apache.helix.HelixManagerFactory;
+import org.apache.helix.IdealStateChangeListener;
 import org.apache.helix.InstanceType;
-import org.apache.helix.LiveInstanceChangeListener;
 import org.apache.helix.NotificationContext;
 import org.apache.helix.api.id.StateModelDefId;
 import org.apache.helix.controller.HelixControllerMain;
 import org.apache.helix.manager.zk.ZKHelixAdmin;
+import org.apache.helix.model.IdealState;
 import org.apache.helix.model.InstanceConfig;
-import org.apache.helix.model.LiveInstance;
 
 import net.tcs.drivers.TCSDriver;
 import net.tcs.utils.TCSConfig;
 
-public class TCSShardAssignmentController implements LiveInstanceChangeListener {
+public class TCSShardAssignmentController implements IdealStateChangeListener {
     private HelixManager manager;
     private HelixManager controllerManager;
     private final String instanceName;
-
-    private final Set<String> activeInstances = new HashSet<>();
 
     public TCSShardAssignmentController(String instanceName) {
         this.instanceName = instanceName;
@@ -53,7 +50,7 @@ public class TCSShardAssignmentController implements LiveInstanceChangeListener 
 
         manager.getStateMachineEngine().registerStateModelFactory(StateModelDefId.from("OnlineOffline"),
                 new TCSShardLockFactory());
-        manager.addLiveInstanceChangeListener(this);
+        manager.addIdealStateChangeListener(this);
         manager.connect();
 
         controllerManager = HelixControllerMain.startHelixController(config.getZookeeperConnectString(), clusterName,
@@ -75,25 +72,18 @@ public class TCSShardAssignmentController implements LiveInstanceChangeListener 
     }
 
     @Override
-    public void onLiveInstanceChange(List<LiveInstance> liveInstances, NotificationContext changeContext) {
-        final Set<String> instances = new HashSet<>();
+    public void onIdealStateChange(List<IdealState> idealState, NotificationContext changeContext) {
+        System.out.println("Ideal state changed for: " + instanceName + "  " + new Date().toString());
 
-        for (final LiveInstance instance : liveInstances) {
-            instances.add(instance.getInstanceName());
+        for (IdealState is : idealState) {
+            if (StringUtils.equalsIgnoreCase(TCSDriver.getConfig().getClusterConfig().getShardGroupName(),
+                    is.getResourceName())) {
+                Set<String> partitions = is.getPartitionSet();
+                if (partitions != null) {
+                    System.out.println("New Parition count: " + partitions.size());
+                    TCSDriver.setNumPartitions(partitions.size());
+                }
+            }
         }
-
-        synchronized (activeInstances) {
-            activeInstances.clear();
-            activeInstances.addAll(instances);
-        }
-    }
-
-    public Collection<String> getActiveInstances() {
-        final Set<String> instances = new HashSet<>();
-        synchronized (activeInstances) {
-            instances.addAll(activeInstances);
-        }
-        return instances;
     }
 }
-

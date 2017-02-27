@@ -117,7 +117,7 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
     }
 
     String chooseARandomShard() {
-        int numPartitions = TCSDriver.getConfig().getClusterConfig().getNumPartitions();
+        int numPartitions = TCSDriver.getNumPartitions();
         return String.format("%s_%d", TCSConstants.TCS_SHARD_GROUP_NAME, r.nextInt(numPartitions));
     }
 
