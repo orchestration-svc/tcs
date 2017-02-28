@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpTemplate;
@@ -17,16 +18,14 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.task.coordinator.amqp.framework.TcsListenerContainerFactory;
 import com.task.coordinator.base.message.ErrorResponse;
-import com.task.coordinator.base.message.SuccessResultMessage;
 import com.task.coordinator.base.message.TcsCtrlMessageResult;
 import com.task.coordinator.endpoint.TcsTaskExecutionEndpoint;
 import com.task.coordinator.message.utils.TCSConstants;
 import com.task.coordinator.message.utils.TCSMessageUtils;
 import com.task.coordinator.producer.TcsProducer;
 import com.task.coordinator.request.message.JobRollbackRequestMessage;
-import com.task.coordinator.request.message.JobSpecRegistrationMessage;
 import com.task.coordinator.request.message.JobSubmitRequestMessage;
-import com.task.coordinator.request.message.QueryJobSpecMessage;
+import com.task.coordinator.request.message.QueryJobSpecRequest;
 import com.task.coordinator.request.message.TaskCompleteMessage;
 import com.task.coordinator.request.message.TaskFailedMessage;
 import com.task.coordinator.request.message.TaskInProgressMessage;
@@ -38,10 +37,12 @@ import net.tcs.api.TCSClient;
 import net.tcs.api.TCSJobHandler;
 import net.tcs.api.TCSTaskContext;
 import net.tcs.exceptions.UnregisteredTaskSpecException;
+import net.tcs.messages.JobRegistrationResponse;
 import net.tcs.messages.JobRollbackRequest;
 import net.tcs.messages.JobRollbackResponse;
 import net.tcs.messages.JobSubmitRequest;
 import net.tcs.messages.JobSubmitResponse;
+import net.tcs.messages.QueryJobSpecResponse;
 import net.tcs.messaging.AddressParser;
 import net.tcs.messaging.SpringRmqConnectionFactory;
 import net.tcs.task.JobDefinition;
@@ -152,11 +153,8 @@ public class TCSClientRuntime implements TCSClient {
     public void registerJob(JobSpec jobSpec) {
         final JobDefinition job = (JobDefinition) jobSpec;
 
-        final JobSpecRegistrationMessage jobSpecRegistrationMessage = new JobSpecRegistrationMessage();
-        jobSpecRegistrationMessage.setJobSpec(job);
-
         final Object result = template.convertSendAndReceive(TCSConstants.TCS_EXCHANGE,
-                TCSConstants.TCS_REGISTER_TASK_RKEY, jobSpecRegistrationMessage);
+                TCSConstants.TCS_REGISTER_TASK_RKEY, job);
 
         if (result == null) {
             LOGGER.error("RegisterJob failed for Job: {}", jobSpec.getJobName());
@@ -164,15 +162,12 @@ public class TCSClientRuntime implements TCSClient {
         }
 
         try {
-            final TcsCtrlMessageResult<?> resultMessage = mapper.readValue((byte[]) result, TcsCtrlMessageResult.class);
-
-            if (resultMessage instanceof TcsCtrlMessageResult) {
-                final TcsCtrlMessageResult<?> ctrlMsg = resultMessage;
-                LOGGER.info("RegisterJob result: {}", ctrlMsg.getResponse().toString());
-            }
+            final JobRegistrationResponse resultMessage = mapper.convertValue(result, JobRegistrationResponse.class);
+            LOGGER.info("RegisterJob: JobName: {}, result: {}", resultMessage.getJobName(), resultMessage.getStatus());
         } catch (final Exception e) {
-            LOGGER.error("RegisterJob failed for Job: {}", jobSpec.getJobName(), e);
+            LOGGER.error("RegisterJob failed while parsing response; Job: {}", jobSpec.getJobName(), e);
         }
+
     }
 
     @Override
@@ -379,7 +374,7 @@ public class TCSClientRuntime implements TCSClient {
     @Override
     public JobSpec queryRegisteredJob(String jobName) {
 
-        final QueryJobSpecMessage message = new QueryJobSpecMessage();
+        final QueryJobSpecRequest message = new QueryJobSpecRequest();
         message.setJobName(jobName);
 
         final Object result = template.convertSendAndReceive(TCSConstants.TCS_EXCHANGE,
@@ -391,27 +386,24 @@ public class TCSClientRuntime implements TCSClient {
         }
 
         try {
-            final TcsCtrlMessageResult<?> ctrlMsg = mapper.readValue((byte[]) result, TcsCtrlMessageResult.class);
+            final QueryJobSpecResponse response = mapper.convertValue(result, QueryJobSpecResponse.class);
 
-            if (ctrlMsg instanceof TcsCtrlMessageResult) {
-                final SuccessResultMessage<String> resultMsg = new SuccessResultMessage(ctrlMsg.getResponse());
-
-                if (resultMsg != null) {
-                    try {
-                        return mapper.readValue(resultMsg.getResponse(), JobDefinition.class);
-                    } catch (final Exception e) {
-                        LOGGER.error(resultMsg.getResponse(), e);
-                        return null;
-                    }
-                }
+            if (StringUtils.equalsIgnoreCase("JOB_NOT_FOUND", response.getStatus())) {
+                LOGGER.warn("Job: {} not registered with TCS", jobName);
+                return null;
+            } else if (!StringUtils.equalsIgnoreCase("OK", response.getStatus())) {
+                LOGGER.warn("Error while querying jobSpec: {}", response.getStatus());
+                return null;
             }
+
+            final JobDefinition jobDef = mapper.readValue(response.getJobSpec(), JobDefinition.class);
+            LOGGER.info("QueryJob: JobName: {}, result: {}", jobDef.getJobName(), jobDef.toString());
+            return jobDef;
+
         } catch (final Exception e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error("QueryJob failed while parsing response; Job: {}", jobName, e);
             return null;
         }
-
-        LOGGER.warn("Job: {} not registered with TCS", jobName);
-        return null;
     }
 
     @Override

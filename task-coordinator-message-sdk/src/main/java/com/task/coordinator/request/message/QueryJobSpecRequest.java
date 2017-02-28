@@ -1,8 +1,13 @@
 package com.task.coordinator.request.message;
 
-import com.task.coordinator.base.message.TcsSyncCtrlMessage;
+public class QueryJobSpecRequest {
 
-public class QueryJobSpecMessage extends TcsSyncCtrlMessage {
+    public QueryJobSpecRequest() {
+    }
+
+    public QueryJobSpecRequest(String jobName) {
+        this.jobName = jobName;
+    }
 
     private String jobName;
 

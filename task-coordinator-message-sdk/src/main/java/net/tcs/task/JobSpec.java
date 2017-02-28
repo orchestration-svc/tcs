@@ -44,15 +44,15 @@ public interface JobSpec {
     /**
      * Mark a list of Tasks under a Step. A Task cannot be part of more than a
      * step. For a list of Tasks to be under a step, all the tasks (except the
-     * first task) must have only the previous task as parent.
+     * first task) must only have one predecessor.
      *
      * For example, if a step consists of T1, T2, T3, T4, then:
      *
-     * T2 must have only one parent: T1.
+     * T2 must have only one predecessor: T1.
      *
-     * T3 must have only one parent: T2.
+     * T3 must have only one predecessor: T2.
      *
-     * T4 must have only one parent: T3.
+     * T4 must have only one predecessor: T3.
      *
      * @param name
      * @param tasks

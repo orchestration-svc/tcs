@@ -28,12 +28,10 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.task.coordinator.base.message.TcsCtrlMessage;
-import com.task.coordinator.base.message.TcsCtrlMessageResult;
 import com.task.coordinator.request.message.BeginJobMessage;
 import com.task.coordinator.request.message.BeginTaskMessage;
 import com.task.coordinator.request.message.JobCompleteMessage;
 import com.task.coordinator.request.message.JobFailedMessage;
-import com.task.coordinator.request.message.JobSpecRegistrationMessage;
 import com.task.coordinator.request.message.JobSubmitRequestMessage;
 import com.task.coordinator.request.message.TaskCompleteMessage;
 import com.task.coordinator.request.message.TaskFailedMessage;
@@ -44,6 +42,7 @@ import net.tcs.core.TaskBoard;
 import net.tcs.core.TestJobDefCreateUtils;
 import net.tcs.db.JobInstanceDAO;
 import net.tcs.db.TaskInstanceDAO;
+import net.tcs.messages.JobRegistrationResponse;
 import net.tcs.messages.JobSubmitRequest;
 import net.tcs.shard.TCSShardRecoveryManager;
 import net.tcs.shard.TCSShardRunner.StopNotifier;
@@ -456,11 +455,8 @@ public class TCSDispatcherTest extends DBAdapterTestBase {
 
         final JobDefinition jobDef = TestJobDefCreateUtils.createJobDef(jobName);
 
-        final JobSpecRegistrationMessage message = new JobSpecRegistrationMessage();
-        message.setJobSpec(jobDef);
-
-        final TcsCtrlMessageResult<?> resultObj = jobRegistrationHandler.processRegisterJob(message);
-        Assert.assertTrue(resultObj instanceof TcsCtrlMessageResult);
+        JobRegistrationResponse resultObj = jobRegistrationHandler.processRegisterJob(jobDef);
+        Assert.assertEquals("ACK", resultObj.getStatus());
     }
 
     private void simulateShutdown() {

@@ -11,14 +11,13 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-import com.task.coordinator.base.message.SuccessResultMessage;
-import com.task.coordinator.base.message.TcsCtrlMessageResult;
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.JobSpecRegistrationMessage;
-import com.task.coordinator.request.message.QueryJobSpecMessage;
+import com.task.coordinator.request.message.QueryJobSpecRequest;
 
 import junit.framework.Assert;
 import net.tcs.core.TestJobDefCreateUtils;
+import net.tcs.messages.QueryJobSpecResponse;
+import net.tcs.messages.JobRegistrationResponse;
 import net.tcs.task.JobDefinition;
 
 public class RegisterJobHandlerTest extends DBAdapterTestBase {
@@ -45,46 +44,33 @@ public class RegisterJobHandlerTest extends DBAdapterTestBase {
 
         final String jobName = "testjob";
 
-        final QueryJobSpecMessage queryMessage = new QueryJobSpecMessage();
+        final QueryJobSpecRequest queryMessage = new QueryJobSpecRequest();
         queryMessage.setJobName(jobName);
 
-        TcsCtrlMessageResult<?> resultObjQuery = jobHandler.processQueryJob(queryMessage);
-        if (resultObjQuery instanceof TcsCtrlMessageResult) {
-            final TcsCtrlMessageResult<?> ctrlMsg = resultObjQuery;
-            Assert.assertTrue(StringUtils.containsIgnoreCase(ctrlMsg.getResponse().toString(), "JOB_NOT_FOUND"));
-        }
+        QueryJobSpecResponse resultObjQuery = jobHandler.processQueryJob(queryMessage);
+        Assert.assertEquals("JOB_NOT_FOUND", resultObjQuery.getStatus());
 
         final JobDefinition jobDef = TestJobDefCreateUtils.createJobDef(jobName);
 
-        final JobSpecRegistrationMessage message = new JobSpecRegistrationMessage();
-        message.setJobSpec(jobDef);
-
-        TcsCtrlMessageResult<?> resultObj = jobHandler.processRegisterJob(message);
-        Assert.assertTrue(resultObj instanceof TcsCtrlMessageResult);
+        JobRegistrationResponse resultObj = jobHandler.processRegisterJob(jobDef);
 
         {
-            final TcsCtrlMessageResult<?> ctrlMsg = resultObj;
-            Assert.assertTrue(StringUtils.containsIgnoreCase(ctrlMsg.getResponse().toString(), "ACK"));
-            Assert.assertTrue(StringUtils.containsIgnoreCase(ctrlMsg.getResponse().toString(), jobName));
+            Assert.assertTrue(StringUtils.equalsIgnoreCase(resultObj.getStatus(), "ACK"));
+            Assert.assertTrue(StringUtils.equalsIgnoreCase(resultObj.getJobName(), jobName));
         }
 
         resultObjQuery = jobHandler.processQueryJob(queryMessage);
-        Assert.assertTrue(resultObjQuery instanceof TcsCtrlMessageResult);
+        Assert.assertEquals("OK", resultObjQuery.getStatus());
         {
-            final TcsCtrlMessageResult<?> ctrlMsg = resultObjQuery;
-            final SuccessResultMessage<String> resultMsg = new SuccessResultMessage(ctrlMsg.getResponse());
-
-            final JobDefinition jobDefRead = mapper.readValue(resultMsg.getResponse(), JobDefinition.class);
+            final JobDefinition jobDefRead = mapper.readValue(resultObjQuery.getJobSpec(), JobDefinition.class);
             Assert.assertNotNull(jobDefRead);
             Assert.assertEquals(jobName, jobDefRead.getJobName());
 
         }
 
-        resultObj = jobHandler.processRegisterJob(message);
-        Assert.assertTrue(resultObj instanceof TcsCtrlMessageResult);
+        resultObj = jobHandler.processRegisterJob(jobDef);
         {
-            final TcsCtrlMessageResult<?> ctrlMsg = resultObj;
-            Assert.assertTrue(StringUtils.containsIgnoreCase(ctrlMsg.getResponse().toString(), "JOB_EXISTS"));
+            Assert.assertTrue(StringUtils.equalsIgnoreCase(resultObj.getStatus(), "JOB_EXISTS"));
         }
     }
 }
