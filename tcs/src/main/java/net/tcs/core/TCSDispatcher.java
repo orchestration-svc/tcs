@@ -26,6 +26,7 @@ import net.tcs.messages.JobCompleteMessage;
 import net.tcs.messages.JobFailedMessage;
 import net.tcs.messaging.AddressParser;
 import net.tcs.shard.TCSShardRecoveryManager.JobRecoverContext;
+import net.tcs.state.JobState;
 import net.tcs.state.TaskState;
 import net.tcs.task.JobDefinition;
 import net.tcs.task.PredecessorTaskOutputImpl;
@@ -245,6 +246,27 @@ public class TCSDispatcher extends TCSAbstractDispatcher {
         beginTasks(jobContext, job, tasks);
     }
 
+    private void beginRecoveredJob(JobRecoverContext recoverContext, JobDefinition jobDef) {
+        LOGGER.trace("Job {} is still in INIT state; Job Id: {}", jobDef.getJobName(),
+                recoverContext.getJobDAO().getInstanceId());
+
+        final JobInstanceDAO job = jobInstanceDBAdapter.saveInProgressJob(recoverContext.getJobDAO().getInstanceId());
+
+        final List<TaskInstanceDAO> taskDAOs = taskDBAdapter.getAllTasksForJobId(job.getInstanceId());
+
+        final JobStateMachineContext jobContext = createJobStateMachineContext(job, jobDef.hasSteps());
+        jobContext.initializeFromJobDefinition(jobDef);
+        if (taskDAOs != null && !taskDAOs.isEmpty()) {
+            jobContext.updateGraph(taskDAOs);
+        }
+
+        inProgressJobsMap.put(job.getInstanceId(), jobContext);
+        final List<TaskStateMachineContextBase> tasks = jobContext.getRootTasks();
+
+        recoverContext.notifyJobRecovered();
+        beginTasks(jobContext, job, tasks);
+    }
+
     private JobStateMachineContext createJobStateMachineContext(JobInstanceDAO job, boolean hasSteps) {
         if (hasSteps) {
             return new StepJobStateMachineContext(job.getName(), job.getInstanceId(), job.getShardId(),
@@ -276,8 +298,8 @@ public class TCSDispatcher extends TCSAbstractDispatcher {
         /*
          * Here are the cases that we need to handle:
          *
-         * 1. There are no tasks in DB. This means that the job has not started
-         * executing yet.
+         *
+         * 1. Job is in INIT state.
          *
          * 2. Some tasks are in COMPLETE state. No tasks are in INPROGRESS
          * state.
@@ -292,6 +314,13 @@ public class TCSDispatcher extends TCSAbstractDispatcher {
          * We do not have to do anything here to recover in-progress tasks. They
          * will be recovered by the TaskRetryDriver.
          */
+        if (JobState.INIT == JobState.get(job.getState())) {
+            /*
+             * case 1
+             */
+            beginRecoveredJob(recoverContext, jobDef);
+            return;
+        }
 
         final List<TaskInstanceDAO> taskDAOs = taskDBAdapter.getAllTasksForJobId(job.getInstanceId());
 
@@ -321,10 +350,6 @@ public class TCSDispatcher extends TCSAbstractDispatcher {
          */
         if (taskDAOs == null || taskDAOs.isEmpty()) {
             recoverContext.notifyJobRecovered();
-
-            /*
-             * case 1
-             */
             LOGGER.trace("No tasks have started executing for recovered InProgress Job name: {}, Job Id: {}",
                     job.getName(), job.getInstanceId());
             tasksReadyToExecute = jobContext.getRootTasks();

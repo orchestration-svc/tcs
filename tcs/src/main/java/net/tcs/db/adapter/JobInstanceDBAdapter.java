@@ -253,6 +253,13 @@ public class JobInstanceDBAdapter {
                     jobs.add(job);
                 }
             }
+
+            final List<JobInstanceDAO> output2 = JobInstanceDAO.where(query, shardId, JobState.INIT.value());
+            if (output2 != null) {
+                for (final JobInstanceDAO job : output2) {
+                    jobs.add(job);
+                }
+            }
             return jobs;
         } finally {
             TCSDriver.getDbAdapter().closeConnection();

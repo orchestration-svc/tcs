@@ -79,7 +79,6 @@ public class TCSDispatcherTest extends DBAdapterTestBase {
     @Override
     @AfterClass
     public void cleanup() {
-        System.out.println("jjacobj");
         super.cleanup();
     }
 
@@ -168,6 +167,58 @@ public class TCSDispatcherTest extends DBAdapterTestBase {
         final JobSubmitRequest req = new JobSubmitRequest(jobName, jobId, "rmq://1.2.3.4/def/rkey", null);
 
         simulateShutdown();
+
+        jobHandler.handleSubmitJob(req);
+
+        final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
+        Assert.assertEquals(runningJobs.size(), 1);
+        Assert.assertEquals(runningJobs.get(0).getInstanceId(), jobId);
+
+        simulateRecovery();
+
+        startRecoveryManagerThread();
+
+        getTasksAssertAndCompleteTasks(jobId, Arrays.asList("t0", "t10"), Arrays.asList("t0", "t10"));
+        getTasksAssertAndCompleteTasks(jobId, Arrays.asList("t1", "t3"), Arrays.asList("t3"));
+        getTasksAssertAndCompleteTasks(jobId, Arrays.asList("t1", "t2", "t5"), Arrays.asList("t1", "t5"));
+        getTasksAssertAndCompleteTasks(jobId, Arrays.asList("t2", "t7", "t8"), Arrays.asList("t2"));
+        getTasksAssertAndCompleteTasks(jobId, Arrays.asList("t4", "t7", "t8"), Arrays.asList("t7", "t8"));
+        getTasksAssertAndCompleteTasks(jobId, Arrays.asList("t4"), Arrays.asList("t4"));
+        getTasksAssertAndCompleteTasks(jobId, Arrays.asList("t6"), Arrays.asList("t6"));
+        getTasksAssertAndCompleteTasks(jobId, Arrays.asList("t9"), Arrays.asList("t9"));
+
+        final Object msg = producer.getMessage();
+        Assert.assertNotNull(msg);
+        final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
+        Assert.assertEquals(jobCompleteMsg.getJobName(), jobName);
+        Assert.assertEquals(jobCompleteMsg.getJobId(), jobId);
+
+        getAndAssertJobState(jobId, JobState.COMPLETE);
+    }
+
+    @Test
+    public void testJobExecutionRecoverAfterJobSubmissionAndInInitState() throws IOException, InterruptedException {
+
+        final String jobId = UUID.randomUUID().toString();
+        final JobSubmitRequest req = new JobSubmitRequest(jobName, jobId, "rmq://1.2.3.4/def/rkey", null);
+
+        simulateShutdown();
+
+        final MessageConverter messageConverter = Mockito.mock(MessageConverter.class);
+        jobHandler = new TcsJobExecSubmitListener(messageConverter, producer) {
+
+            @Override
+            String chooseARandomShard() {
+                return shardId;
+            }
+
+            @Override
+            void routeBeginJobMessage(BeginJobMessage beginJobMessage, String shardId) {
+                /*
+                 * Simulate shutdown before routing is done
+                 */
+            }
+        };
 
         jobHandler.handleSubmitJob(req);
 

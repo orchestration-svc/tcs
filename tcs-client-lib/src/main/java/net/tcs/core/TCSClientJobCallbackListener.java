@@ -66,6 +66,7 @@ public class TCSClientJobCallbackListener extends TcsMessageListener {
             }
 
         } catch (final Exception ex) {
+            ex.printStackTrace();
         }
     }
 }

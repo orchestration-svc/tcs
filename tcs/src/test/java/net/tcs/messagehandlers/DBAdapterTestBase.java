@@ -16,7 +16,6 @@ public class DBAdapterTestBase extends ActiveJDBCEmbeddedDBAdapter {
     protected final TaskInstanceDBAdapter taskInstanceAdapter = new TaskInstanceDBAdapter();
 
     public void setup() throws ClassNotFoundException, SQLException, IOException {
-        System.out.println("Performing INit jjacobj");
         super.initialize(ActiveJDBCEmbeddedDBAdapter.H2_EMBEDDED_DB_URL, "root", "root");
         TCSDriver.setDbAdapter(this);
     }

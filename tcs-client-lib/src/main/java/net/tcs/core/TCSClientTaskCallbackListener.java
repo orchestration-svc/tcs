@@ -68,6 +68,7 @@ public class TCSClientTaskCallbackListener extends TcsMessageListener {
                 System.out.println("Error unsupported message type");
             }
         } catch (final Exception ex) {
+            ex.printStackTrace();
         }
     }
 }
