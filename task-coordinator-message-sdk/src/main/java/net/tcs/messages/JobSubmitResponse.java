@@ -5,11 +5,12 @@ public class JobSubmitResponse {
         this.jobName = jobName;
         this.jobId = jobId;
         this.shardId = shardId;
+        this.status = "OK";
     }
 
-    public JobSubmitResponse(String jobName, String errorCode) {
+    public JobSubmitResponse(String jobName, String status) {
         this.jobName = jobName;
-        this.errorMessage = errorCode;
+        this.status = status;
     }
 
     public String getJobName() {
@@ -36,12 +37,20 @@ public class JobSubmitResponse {
         this.shardId = shardId;
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
+    public String getStatus() {
+        return status;
     }
 
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getErrorDetails() {
+        return errorDetails;
+    }
+
+    public void setErrorDetails(String errorDetails) {
+        this.errorDetails = errorDetails;
     }
 
     public JobSubmitResponse() {
@@ -53,6 +62,8 @@ public class JobSubmitResponse {
 
     private String shardId;
 
-    private String errorMessage;
+    private String status;
+
+    private String errorDetails;
     // TODO job start time
 }

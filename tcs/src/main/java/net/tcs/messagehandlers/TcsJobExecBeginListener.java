@@ -13,8 +13,6 @@ import com.task.coordinator.base.message.listener.TcsMessageListener;
 import com.task.coordinator.base.message.listener.TcsMessageListenerContainer;
 import com.task.coordinator.message.utils.TCSMessageUtils;
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.BeginJobMessage;
-import com.task.coordinator.request.message.RollbackJobMessage;
 
 import net.tcs.core.TCSCommandType;
 import net.tcs.core.TCSDispatcher;
@@ -23,6 +21,8 @@ import net.tcs.core.TaskBoard;
 import net.tcs.db.JobInstanceDAO;
 import net.tcs.db.adapter.JobInstanceDBAdapter;
 import net.tcs.db.adapter.TaskInstanceDBAdapter;
+import net.tcs.messages.BeginJobMessage;
+import net.tcs.messages.RollbackJobMessage;
 
 public class TcsJobExecBeginListener extends TcsMessageListener {
 
@@ -56,7 +56,7 @@ public class TcsJobExecBeginListener extends TcsMessageListener {
     }
 
     @Override
-    public void onMessage(Message message, Channel channel) throws Exception {
+    public void onMessage(Message message, Channel channel) {
         try {
             final Object resultMessage = messageConverter.fromMessage(message);
             if (resultMessage instanceof BeginJobMessage) {

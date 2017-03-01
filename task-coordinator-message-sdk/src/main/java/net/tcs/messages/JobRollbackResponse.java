@@ -4,12 +4,13 @@ public class JobRollbackResponse {
     public JobRollbackResponse(String jobName, String jobId) {
         this.jobName = jobName;
         this.jobId = jobId;
+        this.status = "OK";
     }
 
-    public JobRollbackResponse(String jobName, String jobId, String errorCode) {
+    public JobRollbackResponse(String jobName, String status, String error) {
         this.jobName = jobName;
-        this.jobId = jobId;
-        this.errorMessage = errorCode;
+        this.errorDetails = error;
+        this.status = status;
     }
 
     public JobRollbackResponse() {
@@ -31,18 +32,27 @@ public class JobRollbackResponse {
         this.jobId = jobId;
     }
 
-    public String getErrorMessage() {
-        return errorMessage;
+    public String getStatus() {
+        return status;
     }
 
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getErrorDetails() {
+        return errorDetails;
+    }
+
+    public void setErrorDetails(String errorDetails) {
+        this.errorDetails = errorDetails;
     }
 
     private String jobName;
 
     private String jobId;
 
-    private String errorMessage;
-    // TODO job start time
+    private String status;
+
+    private String errorDetails;
 }

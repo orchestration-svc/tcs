@@ -1,8 +1,6 @@
-package com.task.coordinator.request.message;
+package net.tcs.messages;
 
-import com.task.coordinator.base.message.TcsAsyncCtrlMessage;
-
-public class BeginTaskRollbackMessage extends TcsAsyncCtrlMessage {
+public class BeginTaskRollbackMessage {
 
     public BeginTaskRollbackMessage(String taskName, String taskId, String jobName, String jobId, String shardId,
             int retryCount, String taskOutput) {

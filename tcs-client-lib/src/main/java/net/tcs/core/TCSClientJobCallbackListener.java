@@ -11,11 +11,11 @@ import com.task.coordinator.base.message.listener.TcsMessageListener;
 import com.task.coordinator.base.message.listener.TcsMessageListenerContainer;
 import com.task.coordinator.endpoint.TcsTaskExecutionEndpoint;
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.JobCompleteMessage;
-import com.task.coordinator.request.message.JobFailedMessage;
-import com.task.coordinator.request.message.JobRollbackCompleteMessage;
 
 import net.tcs.api.TCSJobHandler;
+import net.tcs.messages.JobCompleteMessage;
+import net.tcs.messages.JobFailedMessage;
+import net.tcs.messages.JobRollbackCompleteMessage;
 
 public class TCSClientJobCallbackListener extends TcsMessageListener {
 

@@ -10,11 +10,11 @@ import com.task.coordinator.amqp.framework.TcsListenerContainerFactory;
 import com.task.coordinator.base.message.listener.TcsMessageListener;
 import com.task.coordinator.base.message.listener.TcsMessageListenerContainer;
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.BeginTaskMessage;
-import com.task.coordinator.request.message.BeginTaskRollbackMessage;
 
 import net.tcs.api.TCSCallback;
 import net.tcs.api.TCSTaskContext;
+import net.tcs.messages.BeginTaskMessage;
+import net.tcs.messages.BeginTaskRollbackMessage;
 
 public class TCSClientTaskCallbackListener extends TcsMessageListener {
 

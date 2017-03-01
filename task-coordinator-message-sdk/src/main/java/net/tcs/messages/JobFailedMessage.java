@@ -1,18 +1,16 @@
-package com.task.coordinator.request.message;
+package net.tcs.messages;
 
-import com.task.coordinator.base.message.TcsAsyncCtrlMessage;
-
-public class JobRollbackCompleteMessage extends TcsAsyncCtrlMessage {
+public class JobFailedMessage {
 
     private String jobName;
     private String jobId;
 
-    public JobRollbackCompleteMessage(String jobName, String jobId) {
+    public JobFailedMessage(String jobName, String jobId) {
         this.jobName = jobName;
         this.jobId = jobId;
     }
 
-    public JobRollbackCompleteMessage() {
+    public JobFailedMessage() {
     }
 
     public String getJobId() {
@@ -33,6 +31,6 @@ public class JobRollbackCompleteMessage extends TcsAsyncCtrlMessage {
 
     @Override
     public String toString() {
-        return "JobRollbackCompleteMessage [jobName=" + jobName + ", jobId=" + jobId + "]";
+        return "JobFailedMessage [jobName=" + jobName + ", jobId=" + jobId + "]";
     }
 }

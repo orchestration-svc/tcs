@@ -12,12 +12,12 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.QueryJobSpecRequest;
 
 import junit.framework.Assert;
 import net.tcs.core.TestJobDefCreateUtils;
 import net.tcs.messages.QueryJobSpecResponse;
 import net.tcs.messages.JobRegistrationResponse;
+import net.tcs.messages.QueryJobSpecRequest;
 import net.tcs.task.JobDefinition;
 
 public class RegisterJobHandlerTest extends DBAdapterTestBase {

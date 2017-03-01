@@ -7,12 +7,12 @@ import org.slf4j.LoggerFactory;
 
 import com.task.coordinator.endpoint.TcsTaskExecutionEndpoint;
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.BeginTaskRollbackMessage;
-import com.task.coordinator.request.message.JobRollbackCompleteMessage;
 
 import net.tcs.db.JobInstanceDAO;
 import net.tcs.db.TaskInstanceDAO;
 import net.tcs.exceptions.JobStateException;
+import net.tcs.messages.BeginTaskRollbackMessage;
+import net.tcs.messages.JobRollbackCompleteMessage;
 import net.tcs.messaging.AddressParser;
 import net.tcs.task.JobDefinition;
 

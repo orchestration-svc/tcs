@@ -1,11 +1,9 @@
-package com.task.coordinator.request.message;
+package net.tcs.messages;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.task.coordinator.base.message.TcsAsyncCtrlMessage;
-
-public class TaskCompleteMessage extends TcsAsyncCtrlMessage {
+public class TaskCompleteMessage {
     public TaskCompleteMessage() {
     }
 

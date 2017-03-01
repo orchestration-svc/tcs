@@ -8,27 +8,21 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.support.converter.MessageConverter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Channel;
 import com.task.coordinator.amqp.framework.TcsListenerContainerFactory;
-import com.task.coordinator.base.message.ErrorResponse;
-import com.task.coordinator.base.message.ErrorResultMessage;
-import com.task.coordinator.base.message.TcsCtrlMessageResult;
 import com.task.coordinator.base.message.listener.TcsMessageListener;
 import com.task.coordinator.base.message.listener.TcsMessageListenerContainer;
 import com.task.coordinator.endpoint.TcsTaskExecutionEndpoint;
 import com.task.coordinator.message.utils.TCSConstants;
 import com.task.coordinator.message.utils.TCSMessageUtils;
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.BeginJobMessage;
-import com.task.coordinator.request.message.JobRollbackRequestMessage;
-import com.task.coordinator.request.message.JobSubmitRequestMessage;
-import com.task.coordinator.request.message.RollbackJobMessage;
-import com.task.coordinator.response.message.JobRollbackMessageResponse;
-import com.task.coordinator.response.message.JobSubmitMessageResponse;
 
 import net.tcs.db.JobDefinitionDAO;
 import net.tcs.db.JobInstanceDAO;
@@ -40,10 +34,12 @@ import net.tcs.drivers.TCSDriver;
 import net.tcs.exceptions.JobInstanceNotFoundException;
 import net.tcs.exceptions.JobRollbackIllegalStateException;
 import net.tcs.exceptions.JobStateException;
+import net.tcs.messages.BeginJobMessage;
 import net.tcs.messages.JobRollbackRequest;
 import net.tcs.messages.JobRollbackResponse;
 import net.tcs.messages.JobSubmitRequest;
 import net.tcs.messages.JobSubmitResponse;
+import net.tcs.messages.RollbackJobMessage;
 import net.tcs.state.JobState;
 import net.tcs.task.JobDefinition;
 
@@ -75,8 +71,7 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
     public void initialize() {
         final TcsListenerContainerFactory factory = TCSDriver.getContext().getBean(TcsListenerContainerFactory.class);
 
-        listenerContainer = factory.createListenerContainer(this,
-                Arrays.asList(TCSConstants.TCS_SUBMIT_JOB_QUEUE));
+        listenerContainer = factory.createListenerContainer(this, Arrays.asList(TCSConstants.TCS_SUBMIT_JOB_QUEUE));
         listenerContainer.start(1);
     }
 
@@ -87,32 +82,30 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
     }
 
     @Override
-    public void onMessage(Message message, Channel channel) throws Exception {
+    public void onMessage(Message message, Channel channel) {
+
         try {
-            final Object resultMessage = messageConverter.fromMessage(message);
-            if ( resultMessage instanceof JobSubmitRequestMessage) {
-                final TcsCtrlMessageResult<?> result = handleSubmitJob(((JobSubmitRequestMessage) resultMessage));
+            final Object request = messageConverter.fromMessage(message);
 
-                if (result != null ) {
-                    channel.basicPublish("", message.getMessageProperties().getReplyTo(), null,
-                            mapper.writeValueAsBytes(result));
-                }
-            } else if (resultMessage instanceof JobRollbackRequestMessage) {
-                final TcsCtrlMessageResult<?> result = handleRollbackJob(((JobRollbackRequestMessage) resultMessage));
-
-                if (result != null) {
-                    channel.basicPublish("", message.getMessageProperties().getReplyTo(), null,
-                            mapper.writeValueAsBytes(result));
-                }
+            Object response = null;
+            if (request instanceof JobSubmitRequest) {
+                response = handleSubmitJob((JobSubmitRequest) request);
+            } else if (request instanceof JobRollbackRequest) {
+                response = handleRollbackJob(((JobRollbackRequest) request));
+            } else {
+                LOGGER.error("Unsupported message type while processing message: {}", new String(message.getBody()));
+                return;
             }
-        } catch (final Exception e) {
-            LOGGER.error("Exception in TcsJobExecSubmitListener.onMessage()", e);
-            final ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setErrorCode("FAILED");
-            errorResponse.setErrorMessage("Job Exec submit failed");
-            final ErrorResultMessage errorMessage = new ErrorResultMessage(errorResponse);
-            channel.basicPublish("", message.getMessageProperties().getReplyTo(), null,
-                    mapper.writeValueAsBytes(errorMessage));
+
+            if (response != null) {
+                BasicProperties property = new AMQP.BasicProperties.Builder()
+                        .contentType(MessageProperties.CONTENT_TYPE_JSON).build();
+
+                String jsonResponse = new ObjectMapper().writeValueAsString(response);
+                channel.basicPublish("", message.getMessageProperties().getReplyTo(), property, jsonResponse.getBytes("UTF-8"));
+            }
+        } catch (Exception ex) {
+            LOGGER.error("Exception while processing message: {}", new String(message.getBody()));
         }
     }
 
@@ -149,21 +142,17 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
      * @param properties
      * @param body
      */
-    TcsCtrlMessageResult<?> handleSubmitJob(JobSubmitRequestMessage jobSubmitRequestMessage) {
+    JobSubmitResponse handleSubmitJob(JobSubmitRequest jobRequest) {
 
         /*
          * Check if Job is registered
          */
-        final JobSubmitRequest jobRequest = jobSubmitRequestMessage.getRequest();
         final JobDefinitionDAO jobDefDAO = jobDBAdapter.getJobSpec(jobRequest.getJobName());
         if (jobDefDAO == null) {
             LOGGER.warn("No Job definition found in DB, for JobName: {}", jobRequest.getJobName());
-            final ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setErrorCode("FAILED");
-            errorResponse.setErrorMessage(jobRequest.getJobName() + " is not registered");
-            final ErrorResultMessage errorMessage = new ErrorResultMessage(errorResponse);
-            errorMessage.setRequestType(jobSubmitRequestMessage.getRequestType());
-            return errorMessage;
+            JobSubmitResponse response = new JobSubmitResponse(jobRequest.getJobName(), "FAILED");
+            response.setErrorDetails(jobRequest.getJobName() + " is not registered");
+            return response;
         }
 
         String shardId = chooseARandomShard();
@@ -180,10 +169,7 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
         /*
          * Send JobSubmitResponse
          */
-        final JobSubmitResponse jobResponse = new JobSubmitResponse(jobDAO.getName(), jobDAO.getInstanceId(),
-                jobDAO.getShardId());
-        final JobSubmitMessageResponse resultMessage = new JobSubmitMessageResponse(jobResponse);
-        return resultMessage;
+        return new JobSubmitResponse(jobDAO.getName(), jobDAO.getInstanceId(), jobDAO.getShardId());
     }
 
     void routeBeginJobMessage(BeginJobMessage beginJobMessage, String shardId) {
@@ -195,21 +181,16 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
         producer.sendMessage(address.getExchangeName(), address.getRoutingKey(), beginJobMessage);
     }
 
-    private TcsCtrlMessageResult<?> handleRollbackJob(JobRollbackRequestMessage jobSubmitRequestMessage) {
+    private JobRollbackResponse handleRollbackJob(JobRollbackRequest jobRequest) {
 
         /*
          * Check if Job is registered
          */
-        final JobRollbackRequest jobRequest = jobSubmitRequestMessage.getRequest();
         final JobDefinitionDAO jobDefDAO = jobDBAdapter.getJobSpec(jobRequest.getJobName());
         if (jobDefDAO == null) {
             LOGGER.warn("No Job definition found in DB, for JobName: {}", jobRequest.getJobName());
-            final ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setErrorCode("FAILED");
-            errorResponse.setErrorMessage(jobRequest.getJobName() + " is not registered");
-            final ErrorResultMessage errorMessage = new ErrorResultMessage(errorResponse);
-            errorMessage.setRequestType(jobSubmitRequestMessage.getRequestType());
-            return errorMessage;
+            return new JobRollbackResponse(jobRequest.getJobName(), "FAILED",
+                    jobRequest.getJobName() + " is not registered");
         }
 
         final JobInstanceDAO jobDAO;
@@ -218,19 +199,12 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
             checkIfJobReadyForRollback(jobRequest.getJobName(), jobRequest.getJobId());
             jobDAO = jobInstanceDBAdapter.beginRollbackJob(jobRequest.getJobId(), jobRequest.getJobNotificationUri());
         } catch (final RuntimeException ex) {
-            final ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setErrorCode("FAILED");
-            errorResponse.setErrorMessage(ex.getMessage());
-            final ErrorResultMessage errorMessage = new ErrorResultMessage(errorResponse);
-            errorMessage.setRequestType(jobSubmitRequestMessage.getRequestType());
-            return errorMessage;
+            return new JobRollbackResponse(jobRequest.getJobName(), "FAILED", ex.getMessage());
         }
 
         if (jobDAO == null) {
-            final JobRollbackResponse jobResponse = new JobRollbackResponse(jobRequest.getJobName(),
-                    jobRequest.getJobId(), "Job not found");
-            final JobRollbackMessageResponse resultMessage = new JobRollbackMessageResponse(jobResponse);
-            return resultMessage;
+            return new JobRollbackResponse(jobRequest.getJobName(), "NOT_FOUND",
+                    "Job not found: " + jobRequest.getJobName());
         }
 
         /*
@@ -245,9 +219,7 @@ public class TcsJobExecSubmitListener extends TcsMessageListener {
         /*
          * Send JobRollbackResponse
          */
-        final JobRollbackResponse jobResponse = new JobRollbackResponse(jobDAO.getName(), jobDAO.getInstanceId());
-        final JobRollbackMessageResponse resultMessage = new JobRollbackMessageResponse(jobResponse);
-        return resultMessage;
+        return new JobRollbackResponse(jobDAO.getName(), jobDAO.getInstanceId());
     }
 
     private void checkIfJobReadyForRollback(String jobName, String jobInstanceId) {

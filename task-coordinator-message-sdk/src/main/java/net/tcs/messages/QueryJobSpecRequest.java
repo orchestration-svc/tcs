@@ -1,4 +1,4 @@
-package com.task.coordinator.request.message;
+package net.tcs.messages;
 
 public class QueryJobSpecRequest {
 

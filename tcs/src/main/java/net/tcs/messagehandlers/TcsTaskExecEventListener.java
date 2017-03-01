@@ -11,15 +11,10 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.task.coordinator.amqp.framework.TcsListenerContainerFactory;
-import com.task.coordinator.base.message.TcsCtrlMessage;
 import com.task.coordinator.base.message.listener.TcsMessageListener;
 import com.task.coordinator.base.message.listener.TcsMessageListenerContainer;
 import com.task.coordinator.message.utils.TCSMessageUtils;
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.TaskCompleteMessage;
-import com.task.coordinator.request.message.TaskFailedMessage;
-import com.task.coordinator.request.message.TaskInProgressMessage;
-import com.task.coordinator.request.message.TaskRollbackCompleteMessage;
 
 import net.tcs.core.TCSCommandType;
 import net.tcs.core.TCSDispatcher;
@@ -29,6 +24,10 @@ import net.tcs.db.TaskInstanceDAO;
 import net.tcs.db.adapter.TaskInstanceDBAdapter;
 import net.tcs.exceptions.TaskRollbackStateException;
 import net.tcs.exceptions.TaskStateException;
+import net.tcs.messages.TaskCompleteMessage;
+import net.tcs.messages.TaskFailedMessage;
+import net.tcs.messages.TaskInProgressMessage;
+import net.tcs.messages.TaskRollbackCompleteMessage;
 
 public class TcsTaskExecEventListener extends TcsMessageListener {
 
@@ -62,10 +61,10 @@ public class TcsTaskExecEventListener extends TcsMessageListener {
     }
 
     @Override
-    public void onMessage(Message message, Channel channel) throws Exception {
+    public void onMessage(Message message, Channel channel) {
 
         try {
-            final TcsCtrlMessage requestMessage = (TcsCtrlMessage) messageConverter.fromMessage(message);
+            final Object requestMessage = messageConverter.fromMessage(message);
             if ( requestMessage instanceof TaskCompleteMessage ) {
                 handleTaskComplete((TaskCompleteMessage) requestMessage);
             } else if (requestMessage instanceof TaskFailedMessage) {

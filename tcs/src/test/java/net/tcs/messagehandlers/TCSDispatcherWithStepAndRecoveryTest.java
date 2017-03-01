@@ -27,13 +27,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import com.task.coordinator.base.message.TcsCtrlMessage;
 import com.task.coordinator.message.utils.TCSConstants;
-import com.task.coordinator.request.message.BeginJobMessage;
-import com.task.coordinator.request.message.BeginTaskMessage;
-import com.task.coordinator.request.message.JobCompleteMessage;
-import com.task.coordinator.request.message.JobSubmitRequestMessage;
-import com.task.coordinator.request.message.TaskCompleteMessage;
 
 import net.tcs.core.TCSDispatcher;
 import net.tcs.core.TCSRollbackDispatcher;
@@ -42,8 +36,12 @@ import net.tcs.core.TaskKey;
 import net.tcs.core.TestJobDefCreateUtils;
 import net.tcs.db.JobInstanceDAO;
 import net.tcs.db.TaskInstanceDAO;
+import net.tcs.messages.BeginJobMessage;
+import net.tcs.messages.BeginTaskMessage;
+import net.tcs.messages.JobCompleteMessage;
 import net.tcs.messages.JobRegistrationResponse;
 import net.tcs.messages.JobSubmitRequest;
+import net.tcs.messages.TaskCompleteMessage;
 import net.tcs.shard.TCSShardRecoveryManager;
 import net.tcs.shard.TCSShardRunner.StopNotifier;
 import net.tcs.state.JobState;
@@ -118,9 +116,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         final String jobId = UUID.randomUUID().toString();
         final JobSubmitRequest req = new JobSubmitRequest(jobName0, jobId, "rmq://1.2.3.4/def/rkey", null);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -142,7 +138,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t8", 0), tk("t9", 0)), Arrays.asList(tk("t8", 0)));
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t9", 0)), Arrays.asList(tk("t9", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName0);
@@ -161,9 +157,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         jobContext.put(key, "3");
         req.setJobContext(jobContext);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -191,7 +185,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t8", 0), tk("t9", 0)), Arrays.asList(tk("t8", 0)));
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t9", 0)), Arrays.asList(tk("t9", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName0);
@@ -206,9 +200,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         final String jobId = UUID.randomUUID().toString();
         final JobSubmitRequest req = new JobSubmitRequest(jobName0, jobId, "rmq://1.2.3.4/def/rkey", null);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -241,7 +233,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t8", 0), tk("t9", 0)), Arrays.asList(tk("t8", 0)));
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t9", 0)), Arrays.asList(tk("t9", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName0);
@@ -256,9 +248,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         final String jobId = UUID.randomUUID().toString();
         final JobSubmitRequest req = new JobSubmitRequest(jobName1, jobId, "rmq://1.2.3.4/def/rkey", null);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -293,7 +283,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t8", 0), tk("t9", 0)), Arrays.asList(tk("t8", 0)));
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t9", 0)), Arrays.asList(tk("t9", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName1);
@@ -313,9 +303,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         jobContext.put(key, "4");
         req.setJobContext(jobContext);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -330,7 +318,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
 
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t3", 0)), Arrays.asList(tk("t3", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName2);
@@ -350,9 +338,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         jobContext.put(key, "4");
         req.setJobContext(jobContext);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -368,7 +354,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
 
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t3", 0)), Arrays.asList(tk("t3", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName3);
@@ -383,9 +369,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         final String jobId = UUID.randomUUID().toString();
         final JobSubmitRequest req = new JobSubmitRequest(jobName0, jobId, "rmq://1.2.3.4/def/rkey", null);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -416,7 +400,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t8", 0), tk("t9", 0)), Arrays.asList(tk("t8", 0)));
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t9", 0)), Arrays.asList(tk("t9", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName0);
@@ -435,12 +419,9 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         jobContext.put(key, "3");
         req.setJobContext(jobContext);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-
         simulateShutdown();
 
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -472,7 +453,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t8", 0), tk("t9", 0)), Arrays.asList(tk("t8", 0)));
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t9", 0)), Arrays.asList(tk("t9", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName0);
@@ -487,9 +468,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         final String jobId = UUID.randomUUID().toString();
         final JobSubmitRequest req = new JobSubmitRequest(jobName0, jobId, "rmq://1.2.3.4/def/rkey", null);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -531,7 +510,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t8", 0), tk("t9", 0)), Arrays.asList(tk("t8", 0)));
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t9", 0)), Arrays.asList(tk("t9", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName0);
@@ -546,9 +525,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         final String jobId = UUID.randomUUID().toString();
         final JobSubmitRequest req = new JobSubmitRequest(jobName0, jobId, "rmq://1.2.3.4/def/rkey", null);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -593,7 +570,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t8", 0), tk("t9", 0)), Arrays.asList(tk("t8", 0)));
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t9", 0)), Arrays.asList(tk("t9", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName0);
@@ -608,9 +585,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         final String jobId = UUID.randomUUID().toString();
         final JobSubmitRequest req = new JobSubmitRequest(jobName0, jobId, "rmq://1.2.3.4/def/rkey", null);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-        jobHandler.handleSubmitJob(jobSubmitMessage);
+        jobHandler.handleSubmitJob(req);
 
         final List<JobInstanceDAO> runningJobs = jobInstanceAdapter.getAllInprogressJobsForShard(shardId);
         Assert.assertEquals(runningJobs.size(), 1);
@@ -658,7 +633,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t8", 0), tk("t9", 0)), Arrays.asList(tk("t8", 0)));
         getTasksAssertAndCompleteTasks(jobId, Arrays.asList(tk("t9", 0)), Arrays.asList(tk("t9", 0)));
 
-        final TcsCtrlMessage msg = producer.getMessage();
+        final Object msg = producer.getMessage();
         Assert.assertNotNull(msg);
         final JobCompleteMessage jobCompleteMsg = (JobCompleteMessage) msg;
         Assert.assertEquals(jobCompleteMsg.getJobName(), jobName0);
@@ -671,7 +646,7 @@ public class TCSDispatcherWithStepAndRecoveryTest extends DBAdapterTestBase {
         final Map<TaskKey, BeginTaskMessage> tasks = new HashMap<>();
         int receivedTaskCount = 0;
         while (receivedTaskCount < expectedTaskCount) {
-            final TcsCtrlMessage msg = producer.getMessage();
+            final Object msg = producer.getMessage();
             if (msg == null) {
                 break;
             }

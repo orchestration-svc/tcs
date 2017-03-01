@@ -18,15 +18,15 @@ import com.task.coordinator.base.message.listener.TcsMessageListener;
 import com.task.coordinator.base.message.listener.TcsMessageListenerContainer;
 import com.task.coordinator.message.utils.TCSConstants;
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.QueryJobSpecRequest;
 
 import net.tcs.core.JobDefinitionCycleDetector;
 import net.tcs.db.JobDefinitionDAO;
 import net.tcs.db.adapter.JobDefintionDBAdapter;
 import net.tcs.drivers.TCSDriver;
 import net.tcs.exceptions.JobAlreadyExistsException;
-import net.tcs.messages.QueryJobSpecResponse;
 import net.tcs.messages.JobRegistrationResponse;
+import net.tcs.messages.QueryJobSpecRequest;
+import net.tcs.messages.QueryJobSpecResponse;
 import net.tcs.task.JobDefinition;
 
 /**
@@ -69,7 +69,7 @@ public class TcsJobRegisterListener extends TcsMessageListener {
     }
 
     @Override
-    public void onMessage(Message message, Channel channel) throws Exception {
+    public void onMessage(Message message, Channel channel) {
 
         Object result = null;
         try {

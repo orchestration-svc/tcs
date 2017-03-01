@@ -1,8 +1,6 @@
-package com.task.coordinator.request.message;
+package net.tcs.messages;
 
-import com.task.coordinator.base.message.TcsAsyncCtrlMessage;
-
-public class BeginJobMessage extends TcsAsyncCtrlMessage {
+public class BeginJobMessage {
 
     public BeginJobMessage() {
         super();

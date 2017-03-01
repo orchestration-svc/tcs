@@ -1,8 +1,6 @@
-package com.task.coordinator.request.message;
+package net.tcs.messages;
 
-import com.task.coordinator.base.message.TcsAsyncCtrlMessage;
-
-public class TaskRollbackDisallowedMessage extends TcsAsyncCtrlMessage {
+public class TaskRollbackDisallowedMessage {
     public TaskRollbackDisallowedMessage() {
     }
 

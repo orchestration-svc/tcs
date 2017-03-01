@@ -17,20 +17,11 @@ import org.springframework.amqp.support.converter.MessageConverter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.task.coordinator.amqp.framework.TcsListenerContainerFactory;
-import com.task.coordinator.base.message.ErrorResponse;
-import com.task.coordinator.base.message.TcsCtrlMessageResult;
 import com.task.coordinator.endpoint.TcsTaskExecutionEndpoint;
 import com.task.coordinator.message.utils.TCSConstants;
 import com.task.coordinator.message.utils.TCSMessageUtils;
 import com.task.coordinator.producer.TcsProducer;
-import com.task.coordinator.request.message.JobRollbackRequestMessage;
-import com.task.coordinator.request.message.JobSubmitRequestMessage;
-import com.task.coordinator.request.message.QueryJobSpecRequest;
-import com.task.coordinator.request.message.TaskCompleteMessage;
-import com.task.coordinator.request.message.TaskFailedMessage;
-import com.task.coordinator.request.message.TaskInProgressMessage;
-import com.task.coordinator.request.message.TaskRollbackCompleteMessage;
-import com.tcs.amqp.producer.TcsProducerImpl;
+import com.task.coordinator.producer.TcsProducerImpl;
 
 import net.tcs.api.TCSCallback;
 import net.tcs.api.TCSClient;
@@ -42,7 +33,12 @@ import net.tcs.messages.JobRollbackRequest;
 import net.tcs.messages.JobRollbackResponse;
 import net.tcs.messages.JobSubmitRequest;
 import net.tcs.messages.JobSubmitResponse;
+import net.tcs.messages.QueryJobSpecRequest;
 import net.tcs.messages.QueryJobSpecResponse;
+import net.tcs.messages.TaskCompleteMessage;
+import net.tcs.messages.TaskFailedMessage;
+import net.tcs.messages.TaskInProgressMessage;
+import net.tcs.messages.TaskRollbackCompleteMessage;
 import net.tcs.messaging.AddressParser;
 import net.tcs.messaging.SpringRmqConnectionFactory;
 import net.tcs.task.JobDefinition;
@@ -235,35 +231,32 @@ public class TCSClientRuntime implements TCSClient {
                 taskInputMap);
         req.setJobContext(jobContext);
 
-        final JobSubmitRequestMessage jobSubmitMessage = new JobSubmitRequestMessage();
-        jobSubmitMessage.setRequest(req);
-
         final TcsTaskExecutionEndpoint address = TCSMessageUtils
                 .getEndpointAddressForSubmitJob();
 
         final Object result = template
-                .convertSendAndReceive(address.getExchangeName(), address.getRoutingKey(), jobSubmitMessage);
+                .convertSendAndReceive(address.getExchangeName(), address.getRoutingKey(), req);
 
         if (result == null) {
             LOGGER.error("StartJob failed for Job: {}", jobName);
             return null;
         }
 
-        TcsCtrlMessageResult<?> resultMessage = null;
         try {
-            resultMessage = mapper.readValue((byte[]) result, TcsCtrlMessageResult.class);
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
+            final JobSubmitResponse response = mapper.convertValue(result, JobSubmitResponse.class);
 
-        if (resultMessage instanceof TcsCtrlMessageResult) {
-            final JobSubmitResponse response = (JobSubmitResponse) resultMessage.getResponse();
-            if (response != null) {
-                LOGGER.debug("Started Job; Name: {}, JobId: {}, ShardId: {}", jobName, response.getJobId(),
-                        response.getShardId());
+            if (StringUtils.equalsIgnoreCase("FAILED", response.getStatus())) {
+                LOGGER.warn("StartJob failed for Job: {}; error details: {}", jobName, response.getErrorDetails());
+                return null;
             }
+
+            LOGGER.debug("Started Job; Name: {}, JobId: {}, ShardId: {}", jobName, response.getJobId(),
+                    response.getShardId());
+            return response.getJobId();
+        } catch (final Exception e) {
+            LOGGER.error("SubmitJob failed while parsing response; Job: {}", jobName, e);
+            return null;
         }
-        return jobId;
     }
 
     @Override
@@ -422,39 +415,28 @@ public class TCSClientRuntime implements TCSClient {
         final JobRollbackRequest req = new JobRollbackRequest(jobName, jobInstanceId,
                 jobListener.getEndpoint().toEndpointURI());
 
-        final JobRollbackRequestMessage jobRollbackMessage = new JobRollbackRequestMessage();
-        jobRollbackMessage.setRequest(req);
-
         final TcsTaskExecutionEndpoint address = TCSMessageUtils
                 .getEndpointAddressForSubmitJob();
 
         final Object result = template.convertSendAndReceive(address.getExchangeName(), address.getRoutingKey(),
-                jobRollbackMessage);
+                req);
 
         if (result == null) {
             LOGGER.error("Rollback failed for Job: {}", jobName);
             return;
         }
 
-        TcsCtrlMessageResult<?> resultMessage = null;
         try {
-            resultMessage = mapper.readValue((byte[]) result, TcsCtrlMessageResult.class);
-        } catch (final Exception e) {
-            e.printStackTrace();
-        }
+            final JobRollbackResponse response = mapper.convertValue(result, JobRollbackResponse.class);
 
-        if (resultMessage instanceof TcsCtrlMessageResult) {
-            if (resultMessage.isError()) {
-                final ErrorResponse errorMessage = (ErrorResponse) resultMessage.getResponse();
-                System.out.println(errorMessage.getErrorCode());
-                System.out.println(errorMessage.getErrorMessage());
-                System.out.println(errorMessage.getDetailedMessage());
-            } else {
-                final JobRollbackResponse response = (JobRollbackResponse) resultMessage.getResponse();
-                if (response != null) {
-                    LOGGER.debug("Started Job rollback; Name: {}, JobId: {}", jobName, response.getJobId());
-                }
+            if (!StringUtils.equalsIgnoreCase("OK", response.getStatus())) {
+                LOGGER.warn("Rollback failed for Job: {}; error details: {}", jobName, response.getErrorDetails());
+                return;
             }
+
+            LOGGER.debug("Started Job rollback; Name: {}, JobId: {}", jobName, response.getJobId());
+        } catch (final Exception e) {
+            LOGGER.error("RollbackJob failed while parsing response; Job: {}", jobName, e);
         }
     }
 

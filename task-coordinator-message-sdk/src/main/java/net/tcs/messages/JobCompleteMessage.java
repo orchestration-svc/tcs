@@ -1,10 +1,8 @@
-package com.task.coordinator.request.message;
+package net.tcs.messages;
 
 import java.util.Map;
 
-import com.task.coordinator.base.message.TcsAsyncCtrlMessage;
-
-public class JobCompleteMessage extends TcsAsyncCtrlMessage{
+public class JobCompleteMessage {
 
     private String jobName;
     private String jobId;

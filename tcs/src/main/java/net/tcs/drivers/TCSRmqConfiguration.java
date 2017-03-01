@@ -15,7 +15,7 @@ import org.springframework.retry.support.RetryTemplate;
 
 import com.task.coordinator.amqp.framework.TcsListenerContainerFactory;
 import com.task.coordinator.producer.TcsProducer;
-import com.tcs.amqp.producer.TcsProducerImpl;
+import com.task.coordinator.producer.TcsProducerImpl;
 
 @Configuration
 public class TCSRmqConfiguration {

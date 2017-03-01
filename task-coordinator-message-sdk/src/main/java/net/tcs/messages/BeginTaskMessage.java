@@ -1,15 +1,14 @@
-package com.task.coordinator.request.message;
+package net.tcs.messages;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.task.coordinator.base.message.TcsAsyncCtrlMessage;
 
 import net.tcs.task.ParentTaskOutput;
 import net.tcs.task.PredecessorTaskOutputImpl;
 
-public class BeginTaskMessage extends TcsAsyncCtrlMessage {
+public class BeginTaskMessage {
 
     public BeginTaskMessage(String taskName, int taskParallelIndex, String taskId, String jobName, String jobId,
             String shardId,
