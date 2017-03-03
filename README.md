@@ -136,13 +136,13 @@ It uses MySQL to store Job specifications and Job runtime information, such as J
 
 ![](https://github.com/orchestration-svc/tcs/blob/master/images/tcs_arch.jpg)
 
-## TCS Clustering Deployment
+## TCS Clustered Deployment
 
 TCS is designed to run as a multi-node cluster. It has two clustered deployment modes: MULTI_INSTANCE, and ACTIVE_STANDBY.
 
 MULTI_INSTANCE is the default deployment mode.
 
-TCS uses Apache ZooKeeper to store cluster-metadata. It uses [Apache Helix](http://helix.apache.org/) for cluster state coordination.
+TCS uses Apache ZooKeeper to store cluster-metadata. It uses [Apache Helix](http://helix.apache.org/) for cluster state management and coordination.
 
 TCS implements the concept of partitions, in order to provide scale-out, fault-tolerance and load-balancing capability. 
 
@@ -170,7 +170,7 @@ A partition is never without a owner. Which means that, a partition is always as
 
 ### JobInstance placement in a partition
 
-As of now, a Job instance is placed in a partition that is randomly chosen. However, in future, we intend to select a partition that has the least number of running Jobs associated. Once a Job is placed in a partition, it is always associated with that partition. During a partition-rebalancing (as a result of cluster participants change), a partition could move from one node to another node. Thus all the Job DAG processing also moves from one partition to another partition.
+As of now, a Job instance is placed in a partition that is randomly chosen. However, in future, we intend to select a partition that has the least number of running Jobs associated. Once a Job is placed in a partition, it is always associated with that partition. During a partition-rebalancing (as a result of cluster membership change), a partition could move from one node to another node. Thus all the Job DAG processing also moves from one partition to another partition.
 
 ### How Partitions work
 
@@ -180,16 +180,26 @@ This concept of swim-lanes ensures that, all the job-specific protocol messages 
 
 ![](https://github.com/orchestration-svc/tcs/blob/master/images/tcs_partitions_rmq.jpg)
 
-### TCS Active-Standby Deployment
+### Active-Standby
 
 In this deployment, only one TCS node is active, and owns all the partitions. All the remaining nodes are in standby mode. When the active node dies, one of the standby nodes is promoted to become active, and takes ownership of all the partitions.
 
 ## Non-clustered Deployments
 
-### TCS Standalone Deployment
+### Standalone
 
 Only one instance of TCS can be run in this mode. Since there is no clustering, it does not require ZooKeeper.
 
-### TCS Lightweight Deployment
+### Lightweight
 
 This deployment mode is only for testing purposes. It runs with an in-memory DB (H2 Embedded DB), and therefore does not need MySQL.
+
+## Technologies Used
+
+#### Apache ZooKeeper
+#### Apache Helix
+#### Apache Curator
+#### RabbitMQ
+#### MySQL
+#### H2 Embedded DB
+
