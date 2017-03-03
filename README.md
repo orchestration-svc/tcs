@@ -4,7 +4,7 @@ TCS is a Distributed Task Orchestration Service. It orchestrates a Job across va
 
 ![](https://github.com/orchestration-svc/tcs/blob/master/images/tcs.jpg)
 
-### Wiki Links
+## Wiki Links
 [Build and Run TCS](https://github.com/orchestration-svc/tcs/wiki/How-to-run-TCS)
 
 [Build and Run TCS Controller](https://github.com/orchestration-svc/tcs/wiki/How-to-run-TCS-REST-controller)
@@ -22,41 +22,41 @@ TCS is a Distributed Task Orchestration Service. It orchestrates a Job across va
 [Run infra services in Docker](https://github.com/orchestration-svc/tcs/wiki/Running-infra-services-in-Docker)
 
 
-### Common Definitions
+## Common Terminologies
 
-##### Job
+#### Job
 A Job is a Directed Acyclic Graph of Tasks.
 
-##### Task
+#### Task
 A Task is a unit of execution. It is part of a Job. A task is ready for execution, when all its predecessor tasks have completed execution.
 
-##### JobSpec and TaskSpec
+#### JobSpec and TaskSpec
 A JobSpec (Job specification) is a blue-print for a Job. A TaskSpec (Task specification) is a blue-print for a Task. A JobSpec contains a set of TaskSpecs, and the dependency association between the Tasks, in the form of a DAG.
 
-##### JobInstance
+#### JobInstance
 An instantiation of a JobSpec.
 
-##### Task Execution Endpoint
+#### Task Execution Endpoint
 A RabbitMQ endpoint that the TaskExecutors bind to, in order to receive Task messages from TCS. The Task Execution endpoint URI is specified in the Task specification.
 
-##### DAG
+#### DAG
 A Job consists of a set of Tasks whose interdependency can be specified as a Directed Acyclic Graph, or DAG. As TCS orchestrates a Job execution, it traverses the DAG, and dispatches the Tasks to the respective TaskExecutor services for execution. A Task is dispatched for execution, when all its predecessor Tasks have completed execution.
 
-### Pariticipants/Services
+## Pariticipants/Services
 
-##### TCS
+#### TCS
 TCS is a microservice that performs Job orchestration. It orchestrates a Job execution across multiple TaskExecutor services. TCS communicates with Task executor Services over RabbitMQ.
 
-##### JobSubmitter
+#### JobSubmitter
 JobSubmitter is a TCSClient that initiates a Job execution.
 
-##### TaskExecutor
+#### TaskExecutor
 TaskExecutor is a TCSClient that is a participant in the Job execution. It is responsible for executing one or more tasks. It is possible for the same service to act as both JobSubmitter and TaskExecutor.
 
-##### JobNotification Listener
+#### JobNotification Listener
 A service that subscribes to various Job notifications, such as: JobComplete, JobFailed, JobRolledBack.
 
-##### TCS Controller
+#### TCS Controller
 TCS-Controller is a microservice that provides REST APIs to query various Job specification and execution information.
 
 ## Life of a Job
@@ -94,34 +94,34 @@ The TaskExecutor Service can periodically send a **TaskInProgress** heartbeat me
 
 ### Rollback of a Job
 TCS provides mechanism to roll back a Failed Job instance. Only Tasks that have succeeded before, are rolled back.
-Tasks are rolled back in the reverse order, by flipping the DAG.
+Tasks are rolled back in the reverse order, by reversing the DAG.
 
 ### TCS protocol messages
-##### BeginJob
+#### BeginJob
 JobSubmitter sends BeginJob message to TCS to begin a Job instance.
 
-##### BeginTask
+#### BeginTask
 TCS sends BeginTask message to the TaskExecutor, when the Task's predecessors are done.
 
-##### TaskComplete
+#### TaskComplete
 TaskExecutor sends TaskComplete message to TCS, upon task completion.
 
-##### TaskFailed
+#### TaskFailed
 TaskExecutor sends TaskFailed message to TCS, when task execution fails.
 
-##### JobComplete
+#### JobComplete
 TCS sends JobComplete message to JobStatusListener, when Job execution completes successfully.
 
-##### JobFailed
+#### JobFailed
 TCS sends JobFailed message to JobStatusListener, when Job execution fails.
 
-##### JobRolledBack
+#### JobRolledBack
 TCS sends JobRolledBack message to JobStatusListener, when Job rollback completes.
 
-##### TaskRetry
+#### TaskRetry
 TCS sends TaskRetry message to TaskExecutor, to retry task execution, if the task did not complete before timeout.
 
-##### TaskInProgress
+#### TaskInProgress
 TaskExecutor sends TaskInProgress message to TCS, as a heartbeat mechanism to indicate that the Task execution is still in progress, and that TCS should not send a TaskRetry notification.
 
 ![](https://github.com/orchestration-svc/tcs/blob/master/images/job_execution.jpg)
@@ -136,7 +136,7 @@ It uses MySQL to store Job specifications and Job runtime information, such as J
 
 ![](https://github.com/orchestration-svc/tcs/blob/master/images/tcs_arch.jpg)
 
-### TCS Cluster
+## TCS Clustering Deployment
 
 TCS is designed to run as a multi-node cluster. It has two clustered deployment modes: MULTI_INSTANCE, and ACTIVE_STANDBY.
 
@@ -154,7 +154,7 @@ A Partition can be thought of as a swim-lane. When a Job instance is submitted f
 
 In a multi-node TCS cluster, a partition is exclusively owned by only one TCS node at any point of time. This node is responsible for processing DAGs for all running Jobs in the partition.
 
-#### Partitions placement in TCS Nodes
+### Partitions placement in TCS Nodes
 
 In a cluster deployment, there is usually a large number of TCS partitions and a small (variable) number of TCS nodes.
 
@@ -168,11 +168,11 @@ A partition is never without a owner. Which means that, a partition is always as
 
 ![](https://github.com/orchestration-svc/tcs/blob/master/images/tcs_paritions.jpg)
 
-#### JobInstance placement in a partition
+### JobInstance placement in a partition
 
 As of now, a Job instance is placed in a partition that is randomly chosen. However, in future, we intend to select a partition that has the least number of running Jobs associated. Once a Job is placed in a partition, it is always associated with that partition. During a partition-rebalancing (as a result of cluster participants change), a partition could move from one node to another node. Thus all the Job DAG processing also moves from one partition to another partition.
 
-#### How Partitions work
+### How Partitions work
 
 As mentioned before, partitions could be thought of as swim-lanes. A partition is associated with a set of in-bound RabbitMQ queues. All the inbound messages to TCS (from TaskExecutors) are published with a partition-specific routing key; thus the messages land in inbound RabbitMQ queues associated with the partition.
 
@@ -183,6 +183,8 @@ This concept of swim-lanes ensures that, all the job-specific protocol messages 
 ### TCS Active-Standby Deployment
 
 In this deployment, only one TCS node is active, and owns all the partitions. All the remaining nodes are in standby mode. When the active node dies, one of the standby nodes is promoted to become active, and takes ownership of all the partitions.
+
+## Non-clustered Deployments
 
 ### TCS Standalone Deployment
 
