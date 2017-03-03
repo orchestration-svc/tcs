@@ -40,7 +40,7 @@
             <directory>${basedir}/target</directory>
             <outputDirectory>bin</outputDirectory>
             <includes>
-                <include>tcs-1.0-SNAPSHOT-jar-with-dependencies.jar</include>
+                <include>tcs-1.0-jar-with-dependencies.jar</include>
             </includes>
         </fileSet>
     </fileSets>

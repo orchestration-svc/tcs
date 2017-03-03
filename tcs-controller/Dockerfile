@@ -1,6 +1,6 @@
 FROM openjdk:7
 
-ADD tcs-controller-1.0-SNAPSHOT-bin.tar.gz /tmp
+ADD tcs-controller-1.0-bin.tar.gz /tmp
 
 ENV ZK_IP localhost
 ENV MYSQL_IP localhost
