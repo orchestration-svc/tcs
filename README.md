@@ -162,7 +162,9 @@ Helix controller (embedded with TCS runtime) ensures that the partitions are uni
 
 Partitions are automatically rebalanced whenever there is a change in cluster members, i.e, when a TCS node joins the cluster, or leaves the cluster.
 
-The number of partitions can also be dynamically increased, by running a script (link TBA)
+The number of partitions can also be dynamically increased.
+
+[Grow Partition count in TCS cluster](https://github.com/orchestration-svc/tcs/wiki/Grow-Partition-count-in-TCS-Cluster)
 
 A partition is never without a owner. Which means that, a partition is always assigned to one of the running TCS nodes.
 
