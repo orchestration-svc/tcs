@@ -28,7 +28,7 @@
 			<directory>${basedir}/target</directory>
 			<outputDirectory>bin</outputDirectory>
 			<includes>
-				<include>task-coordinator-controller-1.0-SNAPSHOT.jar</include>
+				<include>tcs-controller-1.0-SNAPSHOT.jar</include>
 			</includes>
 		</fileSet>
 	</fileSets>

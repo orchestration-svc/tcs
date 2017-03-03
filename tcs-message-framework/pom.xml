@@ -8,10 +8,10 @@
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>task-coordinator-message-framework</artifactId>
+	<artifactId>tcs-message-framework</artifactId>
 	<packaging>jar</packaging>
 
-	<name>task-coordinator-message-framework</name>
+	<name>tcs-message-framework</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
@@ -23,7 +23,7 @@
 		<!-- TCS Framework Message dependency -->
 		<dependency>
 			<groupId>net.tcs</groupId>
-			<artifactId>task-coordinator-message-sdk</artifactId>
+			<artifactId>tcs-message-sdk</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		<!-- 3rd-party dependencies -->

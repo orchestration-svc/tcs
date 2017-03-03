@@ -4,12 +4,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>net.tcs</groupId>
-	<artifactId>task-coordinator-controller</artifactId>
+	<artifactId>tcs-controller</artifactId>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>task-coordinator-controller</name>
-	<description>task-coordinator-controller</description>
+	<name>tcs-controller</name>
+	<description>tcs-rest-controller</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -44,7 +44,7 @@
 		</dependency>
 		<dependency>
 			<groupId>net.tcs</groupId>
-			<artifactId>task-coordinator-message-sdk</artifactId>
+			<artifactId>tcs-message-sdk</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>

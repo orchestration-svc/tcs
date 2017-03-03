@@ -103,13 +103,12 @@
 	</dependencyManagement>
 
 	<modules>
-		<module>clusterbox</module>
-		<module>task-coordinator-message-sdk</module>
-		<module>task-coordinator-message-framework</module>
+		<module>tcs-message-sdk</module>
+		<module>tcs-message-framework</module>
 		<module>tcs</module>
 		<module>tcs-client-lib</module>
                 <module>tcs-protocol-test-client</module>
-		<module>task-coordinator-controller</module>
+		<module>tcs-controller</module>
 	</modules>
 </project>
 
