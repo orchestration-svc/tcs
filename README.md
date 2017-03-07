@@ -1,6 +1,6 @@
 ## Overview
 
-TCS is a Distributed Task Orchestration Service. It orchestrates a Job across various task executors. TCS communicates with the task executors using RabbitMQ.
+TCS is a Distributed Task Orchestration Service. It orchestrates a Job across various task executors. TCS communicates with the task executor services using RabbitMQ.
 
 ![](https://github.com/orchestration-svc/tcs/blob/master/images/tcs.jpg)
 
@@ -28,7 +28,7 @@ TCS is a Distributed Task Orchestration Service. It orchestrates a Job across va
 A Job is a Directed Acyclic Graph of Tasks.
 
 #### Task
-A Task is a unit of execution. It is part of a Job. A task is ready for execution, when all its predecessor tasks have completed execution.
+A Task is a unit of execution. It is part of a Job. A task is ready for execution, when all its predecessor tasks have completed execution. Each tasks's output is passed as input to its successor task(s).
 
 #### JobSpec and TaskSpec
 A JobSpec (Job specification) is a blue-print for a Job. A TaskSpec (Task specification) is a blue-print for a Task. A JobSpec contains a set of TaskSpecs, and the dependency association between the Tasks, in the form of a DAG.
@@ -148,7 +148,7 @@ TCS implements the concept of partitions, in order to provide scale-out, fault-t
 
 ### Partitions
 
-A Partition (also known as a Shard) is a mechanism to ensure that a Job instance is only processed by one and only one TCS node.
+A Partition (also known as a Shard) is a mechanism to ensure that a Job instance is processed by one and only one TCS node.
 
 A Partition can be thought of as a swim-lane. When a Job instance is submitted for execution, it is placed into one of the partitions. The Job instance is associated with this partition during the lifetime of its execution.
 
