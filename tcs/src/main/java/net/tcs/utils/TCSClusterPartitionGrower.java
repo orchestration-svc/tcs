@@ -52,5 +52,6 @@ public class TCSClusterPartitionGrower {
         admin.setResourceIdealState(clusterName, shardGroupName, is);
         admin.rebalance(clusterName, shardGroupName, 1);
         System.out.println("Partition grow configuration done");
+        admin.close();
     }
 }

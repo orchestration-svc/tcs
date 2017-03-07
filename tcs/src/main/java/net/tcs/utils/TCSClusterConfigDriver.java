@@ -39,5 +39,6 @@ public class TCSClusterConfigDriver {
 
         System.out.println("Helix config Done for TCS cluster. ClusterName: " + clusterName + " ShardGroupName: "
                 + shardGroupName + " Number of partitions: " + numPartitions);
+        admin.close();
     }
 }
