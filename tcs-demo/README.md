@@ -1,5 +1,5 @@
 ### Demo Prerequisites
-    [Build and Run TCS](https://github.com/orchestration-svc/tcs/wiki/How-to-run-TCS)
+[Build and Run TCS](https://github.com/orchestration-svc/tcs/wiki/How-to-run-TCS)
 
 ### Register Job specification
 
