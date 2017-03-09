@@ -17,7 +17,7 @@ public class TaskDefinition implements TaskSpec {
         sb.append("   TaskExecutionTarget: " + taskExecutionTarget);
         sb.append(System.lineSeparator());
 
-        sb.append("   Parents:             [ ");
+        sb.append("   Predecessors:        [ ");
         if (!parents.isEmpty()) {
             for (final String parent : parents) {
                 sb.append(parent + "  ");

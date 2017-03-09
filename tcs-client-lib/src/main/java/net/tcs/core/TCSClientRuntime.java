@@ -145,9 +145,12 @@ public class TCSClientRuntime implements TCSClient {
 
     @Override
     public String startJob(String jobName, byte[] jobInputForParentTasks, Map<String, String> jobContext) {
-        final String jobInputAsStr = new String(jobInputForParentTasks);
-
         final JobDefinition job = getJobDefinition(jobName);
+        if (job == null) {
+            return null;
+        }
+
+        final String jobInputAsStr = new String(jobInputForParentTasks);
 
         final Map<String, String> taskInputMap = new HashMap<>();
         final Map<String, TaskDefinition> taskMap = job.getTaskMap();
@@ -251,6 +254,7 @@ public class TCSClientRuntime implements TCSClient {
                 return job;
             }
         }
+        LOGGER.error("Job {} not registered", jobName);
         return null;
     }
 
@@ -417,5 +421,73 @@ public class TCSClientRuntime implements TCSClient {
     @Override
     public void taskRollbackFailed() {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void prepareToExecute(String jobName, Map<String, TCSCallback> taskHandlers) {
+        final JobDefinition job = getJobDefinition(jobName);
+        if (job != null) {
+            final Map<String, TaskDefinition> taskMap = job.getTaskMap();
+            final Set<String> registeredTasks = taskMap.keySet();
+
+            final Set<String> tasks = taskHandlers.keySet();
+            if (!registeredTasks.containsAll(tasks)) {
+                LOGGER.error("Some of the tasks are not registered for Job: {}", jobName);
+
+                for (final String task : tasks) {
+                    if (!registeredTasks.contains(task)) {
+                        throw new UnregisteredTaskSpecException(jobName, task);
+                    }
+                }
+                return;
+            }
+
+            final RabbitTemplate rmqTemplate = (RabbitTemplate) template;
+            final MessageConverter converter = rmqTemplate.getMessageConverter();
+
+            for (final String task : tasks) {
+
+                final TaskHandlerKey key = new TaskHandlerKey(jobName, task);
+                if (taskCallbackListeners.containsKey(key)) {
+                    LOGGER.info("Already registered to execute: {}/{}", jobName, task);
+                    continue;
+                }
+
+                final TaskDefinition taskDef = taskMap.get(task);
+
+                final TcsTaskExecutionEndpoint endpoint = AddressParser.parseAddress(taskDef.getTaskExecutionTarget());
+                final String queueName = rmqCommandExecutor.bindWithPrivateQueue(endpoint);
+
+                final TCSClientTaskCallbackListener taskListener = new TCSClientTaskCallbackListener(queueName,
+                        producer, converter);
+
+                if (null == taskCallbackListeners.putIfAbsent(key, taskListener)) {
+                    taskListener.registerTCSCallback(taskHandlers.get(task));
+                    taskListener.initialize(factory);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void registerJobListener(String jobName, String endpointURI, TCSJobHandler jobHandler) {
+        final JobDefinition job = getJobDefinition(jobName);
+        if (job != null) {
+            final RabbitTemplate rmqTemplate = (RabbitTemplate) template;
+            final MessageConverter converter = rmqTemplate.getMessageConverter();
+
+            final String jobHandlerQueue = String.format("%s-%s", jobName, UUID.randomUUID().toString());
+
+            TcsTaskExecutionEndpoint jobHandlerEndpoint = AddressParser.parseAddress(endpointURI);
+            rmqCommandExecutor.bindWithPrivateQueue(jobHandlerQueue, jobHandlerEndpoint);
+
+            final TCSClientJobCallbackListener jobListener = new TCSClientJobCallbackListener(jobHandlerQueue, producer,
+                    converter);
+
+            if (null == jobListeners.putIfAbsent(jobName, jobListener)) {
+                jobListener.registerJobCallback(jobHandler);
+                jobListener.initialize(factory, jobHandlerEndpoint);
+            }
+        }
     }
 }

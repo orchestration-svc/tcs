@@ -28,10 +28,10 @@ public interface JobSpec {
      * @param taskName
      * @param taskExecutionTarget
      *            URI of the form rmq://BrokerAddress/exchange/routingkey
-     * @param parentTasks
-     *            set of parent task names
+     * @param predecessorTasks
+     *            set of predecessor task names
      */
-    public JobSpec addTask(String taskName, String taskExecutionTarget, Set<String> parentTasks);
+    public JobSpec addTask(String taskName, String taskExecutionTarget, Set<String> predecessorTasks);
 
     /**
      * Get Task Specification

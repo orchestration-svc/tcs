@@ -3,6 +3,12 @@ package net.tcs.core;
 import net.tcs.api.TCSTaskContext;
 
 public class TaskContextImpl implements TCSTaskContext {
+    @Override
+    public String toString() {
+        return "TaskContextImpl [taskName=" + taskName + ", taskParallelExecutionIndex=" + taskParallelExecutionIndex
+                + ", taskId=" + taskId + ", jobName=" + jobName + ", jobId=" + jobId + ", shardId=" + shardId + "]";
+    }
+
     public TaskContextImpl(String taskName, int taskParallelExecutionIndex, String taskId, String jobName, String jobId,
             String shardId,
             int retryCount) {

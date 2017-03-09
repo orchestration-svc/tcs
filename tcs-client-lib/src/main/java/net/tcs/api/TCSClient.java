@@ -31,14 +31,37 @@ public interface TCSClient {
 
     /**
      * Prepare to execute a subset of tasks for a JobSpec. This will set up
-     * message listeners, so that the job and task notifications can be
-     * received.
+     * couple of things:
+     *
+     * a. JobListener to get job life-cycle notifications. b. Task message
+     * handlers, to get task notifications.
+     *
+     * @param jobName
+     * @param jobHandler
+     * @param taskHandlers
+     *            Map of {TaskName => TCSCallback handler}
+     */
+    public void prepareToExecute(String jobName, TCSJobHandler jobHandler, Map<String, TCSCallback> taskHandlers);
+
+    /**
+     * Prepare to execute a subset of tasks for a JobSpec. This will set up
+     * message handlers, so that task notifications can be received.
      *
      * @param jobName
      * @param taskHandlers
      *            Map of {TaskName => TCSCallback handler}
      */
-    public void prepareToExecute(String jobName, TCSJobHandler jobHandler, Map<String, TCSCallback> taskHandlers);
+    public void prepareToExecute(String jobName, Map<String, TCSCallback> taskHandlers);
+
+    /**
+     * Prepare to execute a subset of tasks for a JobSpec. This will set up
+     * JobListener to get job life-cycle notifications.
+     *
+     * @param jobName
+     * @param endpointURI
+     * @param jobHandler
+     */
+    public void registerJobListener(String jobName, String endpointURI, TCSJobHandler jobHandler);
 
     /**
      * Start a Job
