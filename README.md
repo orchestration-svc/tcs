@@ -5,9 +5,7 @@ TCS is a Distributed Task Orchestration Service. It orchestrates a Job across va
 ![](https://github.com/orchestration-svc/tcs/blob/master/images/tcs.jpg)
 
 ## Wiki Links
-[Build and Run TCS](https://github.com/orchestration-svc/tcs/wiki/How-to-run-TCS)
-
-[Build and Run TCS Controller](https://github.com/orchestration-svc/tcs/wiki/How-to-run-TCS-REST-controller)
+[Run TCS microservices](https://github.com/orchestration-svc/tcs/wiki/Run-TCS-microservices)
 
 [TCSClient API](https://github.com/orchestration-svc/tcs/wiki/TCS-Client-API)
 
