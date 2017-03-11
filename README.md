@@ -171,12 +171,12 @@ This deployment mode is only for testing purposes. It runs with an in-memory DB 
 
 ## Technologies Used
 
-##### Apache ZooKeeper
-##### Apache Helix
-##### Apache Curator
-##### RabbitMQ
-##### MySQL
-##### H2 Embedded DB
-##### Spring Boot
-##### ActiveJDBC
+    Apache ZooKeeper
+    Apache Helix
+    Apache Curator
+    RabbitMQ
+    MySQL
+    H2 Embedded DB
+    Spring Boot
+    ActiveJDBC
 
