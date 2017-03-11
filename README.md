@@ -96,35 +96,8 @@ The TaskExecutor Service can periodically send a **TaskInProgress** heartbeat me
 TCS provides mechanism to roll back a Failed Job instance. Only Tasks that have succeeded before, are rolled back.
 Tasks are rolled back in the reverse order, by reversing the DAG.
 
-### TCS protocol messages
-#### BeginJob
-JobSubmitter sends BeginJob message to TCS to begin a Job instance.
+[TCS Protocol messages](https://github.com/orchestration-svc/tcs/wiki/TCS-Protocol-messages)
 
-#### BeginTask
-TCS sends BeginTask message to the TaskExecutor, when the Task's predecessors are done.
-
-#### TaskComplete
-TaskExecutor sends TaskComplete message to TCS, upon task completion.
-
-#### TaskFailed
-TaskExecutor sends TaskFailed message to TCS, when task execution fails.
-
-#### JobComplete
-TCS sends JobComplete message to JobStatusListener, when Job execution completes successfully.
-
-#### JobFailed
-TCS sends JobFailed message to JobStatusListener, when Job execution fails.
-
-#### JobRolledBack
-TCS sends JobRolledBack message to JobStatusListener, when Job rollback completes.
-
-#### TaskRetry
-TCS sends TaskRetry message to TaskExecutor, to retry task execution, if the task did not complete before timeout.
-
-#### TaskInProgress
-TaskExecutor sends TaskInProgress message to TCS, as a heartbeat mechanism to indicate that the Task execution is still in progress, and that TCS should not send a TaskRetry notification.
-
-![](https://github.com/orchestration-svc/tcs/blob/master/images/job_execution.jpg)
 
 ## TCS Architecture
 
