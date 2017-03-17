@@ -1,5 +1,7 @@
 ### Demo Prerequisites
-[Build and Run TCS](https://github.com/orchestration-svc/tcs/wiki/How-to-run-TCS)
+[Build and Run TCS](https://github.com/orchestration-svc/tcs/wiki/Run-TCS-microservices)
+
+[Run RabbitMQ, ZooKeeper and MySQL](https://github.com/orchestration-svc/tcs/wiki/Running-infra-services-in-Docker)
 
 ### Register Job specification
 
