@@ -8,7 +8,6 @@ fi
 
 echo "TCS Service instance: name: $1"
 
-export CONFIG_FILE=conf/config.json
 export CONFIG_FILE=$TCS_DIR/conf/config.json
 export TCS_SERVICE_INSTANCE=$1
 export TCS_JAR_DIR=$TCS_DIR/bin
